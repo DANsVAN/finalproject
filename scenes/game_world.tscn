@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://b0ny2788uxj8f"]
+
+[node name="GameWorld" type="Node2D" unique_id=660284825]
+
+[node name="Label" type="Label" parent="." unique_id=295896124]
+offset_right = 40.0
+offset_bottom = 23.0
+text = "Game World"
