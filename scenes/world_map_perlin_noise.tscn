@@ -27,6 +27,11 @@ sources/0 = SubResource("TileSetAtlasSource_e70fe")
 
 [node name="WorldMapPerlinNoise" type="Node2D" unique_id=782992415]
 script = ExtResource("1_t1o5u")
+mapWidthInTiles = 75
+snowThreshold = 0.55
+iceThreshold = 0.62
+mountainThreshold = 0.63
 
 [node name="WorldMapLayer" type="TileMapLayer" parent="." unique_id=1512177256]
+unique_name_in_owner = true
 tile_set = SubResource("TileSet_xcgaf")
