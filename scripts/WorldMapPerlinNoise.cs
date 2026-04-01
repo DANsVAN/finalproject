@@ -155,7 +155,7 @@ public partial class WorldMapPerlinNoise : Node2D
 					{
 						adjacencyList[tile, 3] = -1;
 					}
-				GD.Print("current tile " + tile + "leftNeighbor " + leftNeighbor + " rightNeighbor " + rightNeighbor + " upNeighbor " + upNeighbor + " downNeighbor " + downNeighbor);
+				// GD.Print("current tile " + tile + "leftNeighbor " + leftNeighbor + " rightNeighbor " + rightNeighbor + " upNeighbor " + upNeighbor + " downNeighbor " + downNeighbor);
 			}
 			
 
