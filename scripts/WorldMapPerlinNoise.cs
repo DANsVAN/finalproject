@@ -81,7 +81,8 @@ public partial class WorldMapPerlinNoise : Node2D
 	public override void _Ready()
 	{
 		makeMap();
-		printWorldArray();
+		generateAdjacencyList();
+		// printWorldArray();
 	}
 
 	// Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -111,7 +112,54 @@ public partial class WorldMapPerlinNoise : Node2D
 		worldMap = GetNode<TileMapLayer>("%WorldMapLayer");
 		generateMapFromNoise(generateRandNoise());
 	}
+	public void generateAdjacencyList()
+	{	
+		int maxNumberOfTiles = mapWidthInTiles * mapHightInTiles;
+		int maxNeighbor = 4;
+		int[,] adjacencyList = new int[maxNumberOfTiles, maxNeighbor]; // numberOfTiles rows, maxChildren columns
+		for(int tile = 0; tile < maxNumberOfTiles; tile++)
+			{
+				int leftNeighbor = tile - 1;
+				int rightNeighbor = tile + 1;
+				int upNeighbor = tile - mapWidthInTiles;
+				int downNeighbor = tile + mapWidthInTiles;
+				if(leftNeighbor < 0 || leftNeighbor > maxNumberOfTiles)
+					{
+						adjacencyList[tile, 0] = leftNeighbor;
+					}
+				else
+					{
+						adjacencyList[tile, 0] = -1;
+					}
+				if(rightNeighbor < 0 || rightNeighbor > maxNumberOfTiles)
+					{
+						adjacencyList[tile, 1] = rightNeighbor;
+					}
+				else
+					{
+						adjacencyList[tile, 1] = -1;
+					}
+				if(upNeighbor < 0 || upNeighbor > maxNumberOfTiles)
+					{
+						adjacencyList[tile, 2] = upNeighbor;
+					}
+				else
+					{
+						adjacencyList[tile, 2] = -1;
+					}
+				if(downNeighbor < 0 || downNeighbor > maxNumberOfTiles)
+					{
+						adjacencyList[tile, 3] = downNeighbor;
+					}
+				else
+					{
+						adjacencyList[tile, 3] = -1;
+					}
+				GD.Print("current tile " + tile + "leftNeighbor " + leftNeighbor + " rightNeighbor " + rightNeighbor + " upNeighbor " + upNeighbor + " downNeighbor " + downNeighbor);
+			}
+			
 
+	}
 
 
 	public void printWorldArray()
