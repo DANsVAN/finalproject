@@ -17,6 +17,7 @@ public partial class WorldMapPerlinNoise : Node2D
 	[Export] int worldFractalOctaves = 4;
 	[Export] float worldFractalLacunarity = 2.0f;
 	[Export] float worldFractalGain = 0.5f;
+	[Export] public PackedScene EntityPlayerFighter;
 	float[,] worldArray;
 	TileMapLayer worldMap;
 	int maxNumberOfTiles;
@@ -34,6 +35,7 @@ public partial class WorldMapPerlinNoise : Node2D
 		public float noiseValue;
 		public Vector2I tilePos;
 		public Vector2I atlasCoords;
+		public GridEntity occupant = null;
 
 		// Constructor (Optional, but useful)
 		public Tile()
@@ -46,17 +48,13 @@ public partial class WorldMapPerlinNoise : Node2D
 
 	public override void _Ready()
 	{
-		// int maxNumberOfTiles = mapWidthInTiles * mapHightInTiles;
-		// Tile[] allTiles = new Tile[maxNumberOfTiles];
-		// makeMap();
-		// generateAdjacencyList();
-		// printWorldArray();
-
+		
 		maxNumberOfTiles = mapWidthInTiles * mapHightInTiles;
 		allTiles = new Tile[maxNumberOfTiles];
 		
 		makeMap();
 		generateNeighborsOfTiles();
+		SpawnEntityInFirstColumn(EntityPlayerFighter,149);
 	}
 	public FastNoiseLite generateRandNoise()
 	{
@@ -84,15 +82,11 @@ public void generateMapFromNoise(FastNoiseLite noise)
 			{
 				
 				float noiseValueOfTile = noise.GetNoise2D(width,hight);
-				// worldArray[width,hight] = noiseValueOfTile;
 				noiseValueOfTile = (noiseValueOfTile + 1) / 2; // noiseValueOfTile = (noiseValueOfTile + 1) / 2; this is makeing it gen a number from 0 to 1
-				// worldArray[width,hight] = noiseValueOfTile;
 				Vector2I tilePos = new(width,  hight );
 				allTiles[currentTileIndex].index = currentTileIndex;
 				allTiles[currentTileIndex].noiseValue = noiseValueOfTile;
 				allTiles[currentTileIndex].tilePos = tilePos;
-
-				// pick the tile
 				if (noiseValueOfTile < grassThreshold)
 				{
 					allTiles[currentTileIndex].atlasCoords.X = 0;
@@ -216,5 +210,36 @@ public void generateNeighborsOfTiles()
         
         // GD.Print("current tile " + tile.index + " leftNeighbor " + tile.neighbors[0] + " rightNeighbor " + tile.neighbors[1] + " upNeighbor " + tile.neighbors[2] + " downNeighbor " + tile.neighbors[3]);
     }
+}
+[Export] public PackedScene EntityScene; // Drag your Entity.tscn here in the Inspector
+
+public void SpawnEntityInFirstColumn(PackedScene PackedEntityScene, int mapIndex)
+{
+    if (EntityScene == null)
+    {
+        GD.PrintErr("EntityScene not assigned in Inspector!");
+        return;
+    }
+	if (mapIndex < 0 || mapIndex >= allTiles.Length)
+    {
+        GD.PrintErr("Map index out of bounds!");
+        return;
+    }
+
+    // 3. Create the instance
+    var entity = EntityScene.Instantiate<Node2D>();
+    
+    AddChild(entity);
+
+    if (entity is GridEntity gridEntity)
+    {
+        allTiles[mapIndex].occupant = gridEntity;
+    }
+	// int pixelX = allTiles[mapIndex].tilePos.X * allTiles[mapIndex].occupant.spriteSize;
+	// int pixelY = allTiles[mapIndex].tilePos.X * allTiles[mapIndex].occupant.spriteSize;
+	Vector2 pixlePosition = new Vector2((1 * allTiles[mapIndex].tilePos.X * allTiles[mapIndex].occupant.spriteSize) + (allTiles[mapIndex].occupant.spriteSize / 2) ,(1 * allTiles[mapIndex].tilePos.Y  * allTiles[mapIndex].occupant.spriteSize) + (allTiles[mapIndex].occupant.spriteSize / 2));
+	entity.Position = pixlePosition;
+	// allTiles[mapIndex].
+
 }
 }

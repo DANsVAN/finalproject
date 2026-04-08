@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dxfhb24l85r24"]
+
+[ext_resource type="Script" uid="uid://bxxg6iw6jssts" path="res://scripts/GridEntity.cs" id="1_xxvuq"]
+
+[node name="GridEntity" type="Node2D" unique_id=278639261]
+script = ExtResource("1_xxvuq")

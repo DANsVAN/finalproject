@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://c31w46k2o6ukp"]
+
+[ext_resource type="Script" uid="uid://cdn2ouvbjlkhg" path="res://scripts/PlayerFighter.cs" id="1_alx3s"]
+[ext_resource type="Texture2D" uid="uid://brmehfkil4e3w" path="res://assets/GridEntityAssets/Basic Monster Animations/Brawny Ogre/BrawnyOgre.png" id="2_8mnes"]
+
+[node name="PlayerFighter" type="Node2D" unique_id=146751013]
+script = ExtResource("1_alx3s")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=265545722]
+texture = ExtResource("2_8mnes")
+hframes = 4
