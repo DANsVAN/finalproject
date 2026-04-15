@@ -9,10 +9,10 @@ public partial class WorldMapPerlinNoise : Node2D
 	[Export] int mapHightInTiles = 25;
 	[Export] int tileSizeInpixels = 16;
 	[Export] double noiseScale = 0.002;
-	[Export] double grassThreshold = 0.4;
-	[Export] double waterThreshold = 0.5;
-	[Export] double snowThreshold = 0.6;
-	[Export] double iceThreshold = 0.7;
+	[Export] double grassThreshold = 0.51;
+	[Export] double waterThreshold = 0.65;
+	[Export] double snowThreshold = 0.7;
+	[Export] double iceThreshold = 0.75;
 	[Export] double mountainThreshold = 0.8;
 	[Export] float worldNoiseScale = 0.02f;
 	[Export] int worldFractalOctaves = 4;
@@ -22,6 +22,7 @@ public partial class WorldMapPerlinNoise : Node2D
 	[Export] public PackedScene EntityEnemyFighter;
 	float[,] worldArray;
 	TileMapLayer worldMap;
+	TileMapLayer highlightLayer;
 	int maxNumberOfTiles;
 	Tile[] allTiles;
 	GridEntity firstEntityInTheTimeline;
@@ -55,6 +56,7 @@ public partial class WorldMapPerlinNoise : Node2D
 		
 		maxNumberOfTiles = mapWidthInTiles * mapHightInTiles;
 		allTiles = new Tile[maxNumberOfTiles];
+		highlightLayer = GetNode<TileMapLayer>("%HighlightLayer");
 		
 		makeMap();
 		generateNeighborsOfTiles();
@@ -68,8 +70,14 @@ public partial class WorldMapPerlinNoise : Node2D
 		SpawnEntity(EntityEnemyFighter,620);
 		SpawnEntity(EntityEnemyFighter,115);
 		SpawnEntity(EntityEnemyFighter,800);
-		updateTimeline();
 		PositionAllEntintys();
+		takeTurn();
+		takeTurn();
+		// takeTurn();
+		// takeTurn();
+		// takeTurn();
+		// takeTurn();
+		// takeTurn();
 	}
 	public FastNoiseLite generateRandNoise()
 	{
@@ -107,24 +115,28 @@ public void generateMapFromNoise(FastNoiseLite noise)
 					allTiles[currentTileIndex].atlasCoords.X = 0;
 					allTiles[currentTileIndex].atlasCoords.Y = 3;
 					allTiles[currentTileIndex].tileName = "grass";
+					allTiles[currentTileIndex].movementCost = 1;
 				}
 				else if (noiseValueOfTile < waterThreshold)
 				{
 					allTiles[currentTileIndex].atlasCoords.X = 3;
 					allTiles[currentTileIndex].atlasCoords.Y = 0;
 					allTiles[currentTileIndex].tileName = "water";
+					allTiles[currentTileIndex].movementCost = 2;
 				}
 				else if (noiseValueOfTile < snowThreshold)
 				{
 					allTiles[currentTileIndex].atlasCoords.X = 1;
 					allTiles[currentTileIndex].atlasCoords.Y = 0;
 					allTiles[currentTileIndex].tileName = "snow";
+					allTiles[currentTileIndex].movementCost = 3;
 				}
 					else if (noiseValueOfTile < iceThreshold)
 				{
 					allTiles[currentTileIndex].atlasCoords.X = 0;
 					allTiles[currentTileIndex].atlasCoords.Y = 1;
 					allTiles[currentTileIndex].tileName = "ice";
+					allTiles[currentTileIndex].movementCost = 5;
 				}
 				else
 				{
@@ -132,6 +144,7 @@ public void generateMapFromNoise(FastNoiseLite noise)
 					allTiles[currentTileIndex].atlasCoords.X = 0;
 					allTiles[currentTileIndex].atlasCoords.Y = 2;
 					allTiles[currentTileIndex].tileName = "mountain";
+					allTiles[currentTileIndex].movementCost = 6;
 				}
 				worldMap.SetCell(allTiles[currentTileIndex].tilePos,0,allTiles[currentTileIndex].atlasCoords);
 				currentTileIndex ++;
@@ -167,64 +180,50 @@ public void generateMapFromNoise(FastNoiseLite noise)
 		worldMap = GetNode<TileMapLayer>("%WorldMapLayer");
 		generateMapFromNoise(generateRandNoise());
 	}
-	
 public void generateNeighborsOfTiles()
-{	
+{   
     foreach (ref Tile tile in allTiles.AsSpan())
     {
-        // 1. Initialize the array BEFORE trying to use it!
         tile.neighbors = new int[4]; 
 
-        tile.leftNeighbor = tile.index - 1;
-        tile.rightNeighbor = tile.index + 1;
-        tile.upNeighbor = tile.index - mapWidthInTiles;
-        tile.downNeighbor = tile.index + mapWidthInTiles;
-        
-        // 2. Corrected Logic: If it's OUT of bounds (< 0 or >= maxNumberOfTiles), it is -1.
-        // Otherwise, it is a valid neighbor.
-        
-        // Left Neighbor
-        if(tile.leftNeighbor < 0 || tile.leftNeighbor >= maxNumberOfTiles)
-        {
+        int x = tile.index % mapWidthInTiles; // Column
+        int y = tile.index / mapWidthInTiles; // Row
+
+        // --- LEFT Neighbor ---
+        // If x is 0, there is no one to the left.
+        if (x > 0) 
+            tile.neighbors[0] = tile.index - 1;
+        else 
             tile.neighbors[0] = -1;
-        }
-        else
-        {
-            tile.neighbors[0] = tile.leftNeighbor;
-        }
 
-        // Right Neighbor
-        if(tile.rightNeighbor < 0 || tile.rightNeighbor >= maxNumberOfTiles)
-        {
+        // --- RIGHT Neighbor ---
+        // If x is at mapWidth - 1, there is no one to the right.
+        if (x < mapWidthInTiles - 1) 
+            tile.neighbors[1] = tile.index + 1;
+        else 
             tile.neighbors[1] = -1;
-        }
-        else
-        {
-            tile.neighbors[1] = tile.rightNeighbor;
-        }
 
-        // Up Neighbor
-        if(tile.upNeighbor < 0 || tile.upNeighbor >= maxNumberOfTiles)
-        {
+        // --- UP Neighbor ---
+        // If y is 0, we are at the top row.
+        if (y > 0) 
+            tile.neighbors[2] = tile.index - mapWidthInTiles;
+        else 
             tile.neighbors[2] = -1;
-        }
-        else
-        {
-            tile.neighbors[2] = tile.upNeighbor;
-        }
 
-        // Down Neighbor
-        if(tile.downNeighbor < 0 || tile.downNeighbor >= maxNumberOfTiles)
-        {
+        // --- DOWN Neighbor ---
+        // If y is at mapHeight - 1, we are at the bottom row.
+        if (y < mapHightInTiles - 1) 
+            tile.neighbors[3] = tile.index + mapWidthInTiles;
+        else 
             tile.neighbors[3] = -1;
-        }
-        else
-        {
-            tile.neighbors[3] = tile.downNeighbor;
-        }
+            
+        // Sync the struct fields for backward compatibility with your code
+        tile.leftNeighbor = tile.neighbors[0];
+        tile.rightNeighbor = tile.neighbors[1];
+        tile.upNeighbor = tile.neighbors[2];
+        tile.downNeighbor = tile.neighbors[3];
     }
 }
-
 
 public void SpawnEntity(PackedScene PackedEntityScene, int mapIndex)
 {
@@ -265,20 +264,116 @@ public void PositionAllEntintys()
 }
 public void updateTimeline()
 {
-		GridEntity firstEntityInTheTimeline = allEntitys[0];
-		foreach (GridEntity entity in allEntitys)
-		{
-			if(entity.CurrentSpeed > firstEntityInTheTimeline.CurrentSpeed)
-			{
-				firstEntityInTheTimeline = entity;
-			}
-			else
-			{
-				entity.CurrentSpeed += entity.BaseSpeed;
-				entity.sprite.Modulate = Colors.White;
-			}
-		}
-		firstEntityInTheTimeline.CurrentSpeed = firstEntityInTheTimeline.BaseSpeed;
-		firstEntityInTheTimeline.sprite.Modulate = Colors.Green;
+    if (allEntitys.Count == 0) return;
+
+    // 1. Find the entity who CURRENTLY has the highest speed 
+    // before we add this round's speed boost.
+    firstEntityInTheTimeline = allEntitys[0];
+    foreach (GridEntity entity in allEntitys)
+    {
+        if (entity.CurrentSpeed > firstEntityInTheTimeline.CurrentSpeed)
+        {
+            firstEntityInTheTimeline = entity;
+        }
+    }
+
+    // 2. Process everyone based on whether they won or lost the timeline order
+    foreach (GridEntity entity in allEntitys)
+    {
+        if (entity == firstEntityInTheTimeline)
+        {
+            entity.CurrentSpeed = entity.BaseSpeed; 
+            entity.sprite.Modulate = Colors.Green;
+        }
+        else
+        {
+            entity.CurrentSpeed += entity.BaseSpeed;
+            entity.sprite.Modulate = Colors.White;
+        }
+    }
+}
+public List<int> GetReachableTiles(int startIndex, int movementRange)
+{
+    // Dictionary to track the lowest cost to reach each tile
+    Dictionary<int, int> costSoFar = new Dictionary<int, int>();
+    
+    // Priority queue to explore cheapest paths first (TileIndex, TotalCost)
+    PriorityQueue<int, int> frontier = new PriorityQueue<int, int>();
+
+    // Add the starting tile
+    frontier.Enqueue(startIndex, 0);
+    costSoFar[startIndex] = 0;
+
+    while (frontier.Count > 0)
+    {
+        int current = frontier.Dequeue();
+
+        // Check all 4 neighbors
+        foreach (int next in allTiles[current].neighbors)
+        {
+            // Skip invalid (out of bounds) neighbors
+            if (next == -1) continue;
+
+            // PREVENT WALKING THROUGH IMPASSABLE TERRAIN
+            // You can adjust these string names based on your tile types
+            if (allTiles[next].tileName == "water" || allTiles[next].tileName == "mountain") 
+                continue;
+
+            // PREVENT WALKING THROUGH OTHER ENTITIES
+            if (allTiles[next].occupant != null && next != startIndex) 
+                continue;
+
+            // Calculate cost to step on this tile. 
+            // If movementCost isn't set, default to 1 to prevent freezing.
+            int costToMove = allTiles[next].movementCost > 0 ? allTiles[next].movementCost : 1;
+            
+            int newCost = costSoFar[current] + costToMove;
+
+            // If the total cost is within range, see if we should add it
+            if (newCost <= movementRange)
+            {
+                // If we haven't visited this tile yet, OR we found a cheaper way to get here
+                if (!costSoFar.ContainsKey(next) || newCost < costSoFar[next])
+                {
+                    costSoFar[next] = newCost;
+                    frontier.Enqueue(next, newCost); // Add to queue to explore its neighbors later
+                }
+            }
+        }
+    }
+
+    // Convert the visited dictionary keys into a list of reachable tile indexes
+    return new List<int>(costSoFar.Keys);
+}
+public void HighlightReachableTiles(List<int> reachableIndices)
+{
+    // 1. Clear out any highlights from the previous turn
+    highlightLayer.Clear();
+
+    // 2. The Atlas Coordinates of the tile you want to use for highlighting.
+    // Change this to the X,Y coordinates of a plain white tile in your TileSet!
+    // For now, I'm using your grass tile coordinates (0, 3) as a placeholder.
+    Vector2I highlightAtlasCoord = new Vector2I(0, 3); 
+
+    // 3. Loop through every reachable tile and place a highlight block there
+    foreach (int index in reachableIndices)
+    {
+        Vector2I gridPos = allTiles[index].tilePos;
+        
+        // Place the tile on the highlight layer (0 is the source ID of your tileset)
+        highlightLayer.SetCell(gridPos, 0, highlightAtlasCoord);
+    }
+}
+public void takeTurn()
+{
+    updateTimeline();
+
+    GridEntity activeUnit = firstEntityInTheTimeline;
+
+    // 1. Calculate where they can go
+    List<int> reachableTiles = GetReachableTiles(activeUnit.mapindex, activeUnit.MovementRange);
+
+    // 2. Paint those tiles green!
+    HighlightReachableTiles(reachableTiles);
 }
 }
