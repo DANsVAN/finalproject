@@ -9,10 +9,11 @@ public partial class GridEntity : Node2D
 	public int MovementRange;
 	public int MaxHealth;
 	public int CurrentHealth;
-	public int Speed;
+	public int BaseSpeed;
+	public int CurrentSpeed;
 	public int AttackRange;
 	public int BaseDamage;
-	protected Sprite2D sprite;
+	public Sprite2D sprite;
 	public int mapindex;
 	public int spriteSize = 16;
 	public Node2D Node2DEntity;
@@ -24,7 +25,8 @@ public partial class GridEntity : Node2D
 		MovementRange = movementRange;
         MaxHealth = health;
 		CurrentHealth = health;
-		Speed = speed;
+		BaseSpeed = speed;
+		CurrentSpeed = speed;
 		AttackRange = attackRange;
 		BaseDamage = baseDamage;
         GD.Print("GridEntity constructor called!");

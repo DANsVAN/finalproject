@@ -35,7 +35,6 @@ iceThreshold = 0.62
 mountainThreshold = 0.63
 EntityPlayerFighter = ExtResource("2_e70fe")
 EntityEnemyFighter = ExtResource("3_xcgaf")
-EntityScene = ExtResource("2_e70fe")
 
 [node name="WorldMapLayer" type="TileMapLayer" parent="." unique_id=1512177256]
 unique_name_in_owner = true

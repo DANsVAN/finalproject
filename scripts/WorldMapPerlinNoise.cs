@@ -24,7 +24,7 @@ public partial class WorldMapPerlinNoise : Node2D
 	TileMapLayer worldMap;
 	int maxNumberOfTiles;
 	Tile[] allTiles;
-	// GridEntity[] allEntitys;
+	GridEntity firstEntityInTheTimeline;
 	List<GridEntity> allEntitys = new List<GridEntity> {};
 	public struct Tile
 	{
@@ -68,6 +68,7 @@ public partial class WorldMapPerlinNoise : Node2D
 		SpawnEntity(EntityEnemyFighter,620);
 		SpawnEntity(EntityEnemyFighter,115);
 		SpawnEntity(EntityEnemyFighter,800);
+		updateTimeline();
 		PositionAllEntintys();
 	}
 	public FastNoiseLite generateRandNoise()
@@ -261,5 +262,23 @@ public void PositionAllEntintys()
 	Vector2 pixlePosition = new Vector2((1 * allTiles[entity.mapindex].tilePos.X * allTiles[entity.mapindex].occupant.spriteSize) + (allTiles[entity.mapindex].occupant.spriteSize / 2) ,(1 * allTiles[entity.mapindex].tilePos.Y  * allTiles[entity.mapindex].occupant.spriteSize) + (allTiles[entity.mapindex].occupant.spriteSize / 2));
     entity.Node2DEntity.Position = pixlePosition;
 }
+}
+public void updateTimeline()
+{
+		GridEntity firstEntityInTheTimeline = allEntitys[0];
+		foreach (GridEntity entity in allEntitys)
+		{
+			if(entity.CurrentSpeed > firstEntityInTheTimeline.CurrentSpeed)
+			{
+				firstEntityInTheTimeline = entity;
+			}
+			else
+			{
+				entity.CurrentSpeed += entity.BaseSpeed;
+				entity.sprite.Modulate = Colors.White;
+			}
+			firstEntityInTheTimeline.CurrentSpeed = firstEntityInTheTimeline.BaseSpeed;
+			firstEntityInTheTimeline.sprite.Modulate = Colors.Green;
+		}
 }
 }
