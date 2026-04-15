@@ -15,7 +15,7 @@ public partial class GridEntity : Node2D
 	protected Sprite2D sprite;
 	public int mapindex;
 	public int spriteSize = 16;
-	public Node2D entity;
+	public Node2D Node2DEntity;
 
 
     // Constructor for the base class

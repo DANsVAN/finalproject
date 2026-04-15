@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://dahugjxcekk2x"]
+
+[ext_resource type="Script" uid="uid://du8fxvygg1mrj" path="res://scripts/EnemyFighter.cs" id="1_0q0cd"]
+[ext_resource type="Texture2D" uid="uid://db26kkhq16qfd" path="res://assets/GridEntityAssets/Basic Monster Animations/Murky Slaad/MurkySlaad.png" id="2_almps"]
+
+[node name="enemy_fighter" type="Node2D" unique_id=933217523]
+script = ExtResource("1_0q0cd")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1184782704]
+texture = ExtResource("2_almps")
+hframes = 4

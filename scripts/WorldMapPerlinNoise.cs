@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.Security.Cryptography.X509Certificates;
+using System.Collections.Generic;
 
 public partial class WorldMapPerlinNoise : Node2D
 {
@@ -18,10 +19,13 @@ public partial class WorldMapPerlinNoise : Node2D
 	[Export] float worldFractalLacunarity = 2.0f;
 	[Export] float worldFractalGain = 0.5f;
 	[Export] public PackedScene EntityPlayerFighter;
+	[Export] public PackedScene EntityEnemyFighter;
 	float[,] worldArray;
 	TileMapLayer worldMap;
 	int maxNumberOfTiles;
 	Tile[] allTiles;
+	// GridEntity[] allEntitys;
+	List<GridEntity> allEntitys = new List<GridEntity> {};
 	public struct Tile
 	{
 		public int index;
@@ -54,7 +58,17 @@ public partial class WorldMapPerlinNoise : Node2D
 		
 		makeMap();
 		generateNeighborsOfTiles();
-		SpawnEntityInFirstColumn(EntityPlayerFighter,149);
+		SpawnEntity(EntityPlayerFighter,149);
+		SpawnEntity(EntityPlayerFighter,0);
+		SpawnEntity(EntityPlayerFighter,100);
+		SpawnEntity(EntityPlayerFighter,50);
+		SpawnEntity(EntityPlayerFighter,49);
+		SpawnEntity(EntityPlayerFighter,10);
+		SpawnEntity(EntityEnemyFighter,600);
+		SpawnEntity(EntityEnemyFighter,620);
+		SpawnEntity(EntityEnemyFighter,115);
+		SpawnEntity(EntityEnemyFighter,800);
+		PositionAllEntintys();
 	}
 	public FastNoiseLite generateRandNoise()
 	{
@@ -207,15 +221,13 @@ public void generateNeighborsOfTiles()
         {
             tile.neighbors[3] = tile.downNeighbor;
         }
-        
-        // GD.Print("current tile " + tile.index + " leftNeighbor " + tile.neighbors[0] + " rightNeighbor " + tile.neighbors[1] + " upNeighbor " + tile.neighbors[2] + " downNeighbor " + tile.neighbors[3]);
     }
 }
-[Export] public PackedScene EntityScene; // Drag your Entity.tscn here in the Inspector
 
-public void SpawnEntityInFirstColumn(PackedScene PackedEntityScene, int mapIndex)
+
+public void SpawnEntity(PackedScene PackedEntityScene, int mapIndex)
 {
-    if (EntityScene == null)
+    if (PackedEntityScene == null)
     {
         GD.PrintErr("EntityScene not assigned in Inspector!");
         return;
@@ -227,7 +239,7 @@ public void SpawnEntityInFirstColumn(PackedScene PackedEntityScene, int mapIndex
     }
 
     // 3. Create the instance
-    var entity = EntityScene.Instantiate<Node2D>();
+    var entity = PackedEntityScene.Instantiate<Node2D>();
     
     AddChild(entity);
 
@@ -235,11 +247,19 @@ public void SpawnEntityInFirstColumn(PackedScene PackedEntityScene, int mapIndex
     {
         allTiles[mapIndex].occupant = gridEntity;
     }
-	// int pixelX = allTiles[mapIndex].tilePos.X * allTiles[mapIndex].occupant.spriteSize;
-	// int pixelY = allTiles[mapIndex].tilePos.X * allTiles[mapIndex].occupant.spriteSize;
-	Vector2 pixlePosition = new Vector2((1 * allTiles[mapIndex].tilePos.X * allTiles[mapIndex].occupant.spriteSize) + (allTiles[mapIndex].occupant.spriteSize / 2) ,(1 * allTiles[mapIndex].tilePos.Y  * allTiles[mapIndex].occupant.spriteSize) + (allTiles[mapIndex].occupant.spriteSize / 2));
-	entity.Position = pixlePosition;
-	// allTiles[mapIndex].
-
+	allTiles[mapIndex].occupant.mapindex = mapIndex;
+	// Vector2 pixlePosition = new Vector2((1 * allTiles[mapIndex].tilePos.X * allTiles[mapIndex].occupant.spriteSize) + (allTiles[mapIndex].occupant.spriteSize / 2) ,(1 * allTiles[mapIndex].tilePos.Y  * allTiles[mapIndex].occupant.spriteSize) + (allTiles[mapIndex].occupant.spriteSize / 2));
+	allTiles[mapIndex].occupant.Node2DEntity = entity;
+	// allTiles[mapIndex].occupant.Node2DEntity.Position = pixlePosition;
+	allEntitys.Add(allTiles[mapIndex].occupant);
+	// allEntitys[0].Node2DEntity.Position = pixlePosition;
+}
+public void PositionAllEntintys()
+{
+	foreach (GridEntity entity in allEntitys)
+{
+	Vector2 pixlePosition = new Vector2((1 * allTiles[entity.mapindex].tilePos.X * allTiles[entity.mapindex].occupant.spriteSize) + (allTiles[entity.mapindex].occupant.spriteSize / 2) ,(1 * allTiles[entity.mapindex].tilePos.Y  * allTiles[entity.mapindex].occupant.spriteSize) + (allTiles[entity.mapindex].occupant.spriteSize / 2));
+    entity.Node2DEntity.Position = pixlePosition;
+}
 }
 }

@@ -1,9 +1,9 @@
 using Godot;
 using System;
 
-public partial class PlayerFighter : GridEntity 
+public partial class EnemyFighter : GridEntity 
 {	
-	public PlayerFighter() : base(20,5,5,1,5)
+	public EnemyFighter() : base(20,5,5,1,5)
 	{
 	}
 	public override void _Ready()

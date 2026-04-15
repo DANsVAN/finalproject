@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://d4fpxcv7w40g0" path="res://scripts/WorldMapPerlinNoise.cs" id="1_t1o5u"]
 [ext_resource type="PackedScene" uid="uid://c31w46k2o6ukp" path="res://scenes/player_fighter.tscn" id="2_e70fe"]
 [ext_resource type="Texture2D" uid="uid://dq07cfymdv8el" path="res://assets/terrain-4x4-0005.png" id="2_odcjq"]
+[ext_resource type="PackedScene" uid="uid://dahugjxcekk2x" path="res://scenes/enemy_fighter.tscn" id="3_xcgaf"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_e70fe"]
 texture = ExtResource("2_odcjq")
@@ -32,6 +33,8 @@ mapWidthInTiles = 75
 snowThreshold = 0.55
 iceThreshold = 0.62
 mountainThreshold = 0.63
+EntityPlayerFighter = ExtResource("2_e70fe")
+EntityEnemyFighter = ExtResource("3_xcgaf")
 EntityScene = ExtResource("2_e70fe")
 
 [node name="WorldMapLayer" type="TileMapLayer" parent="." unique_id=1512177256]
