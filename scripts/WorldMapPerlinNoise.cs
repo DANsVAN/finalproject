@@ -20,6 +20,7 @@ public partial class WorldMapPerlinNoise : Node2D
 	[Export] float worldFractalGain = 0.5f;
 	[Export] public PackedScene EntityPlayerFighter;
 	[Export] public PackedScene EntityEnemyFighter;
+	private bool isMoving = false; // Prevents clicking while someone is walking
 	float[,] worldArray;
 	TileMapLayer worldMap;
 	TileMapLayer highlightLayer;
@@ -28,6 +29,13 @@ public partial class WorldMapPerlinNoise : Node2D
 	Tile[] allTiles;
 	GridEntity firstEntityInTheTimeline;
 	List<GridEntity> allEntitys = new List<GridEntity> {};
+	public bool isplayer = true;
+	public int mapStart = 0;
+	public int mapMiddle;
+	public int mapEnd;
+
+
+
 	public struct Tile
 	{
 		public int index;
@@ -60,19 +68,22 @@ public partial class WorldMapPerlinNoise : Node2D
 		allTiles = new Tile[maxNumberOfTiles];
 		highlightLayer = GetNode<TileMapLayer>("%HighlightLayer");
 		pathLayer = GetNode<TileMapLayer>("%PathLayer");
-		
+		mapMiddle = (mapWidthInTiles * mapHightInTiles)/2;
+		mapEnd = (mapWidthInTiles * mapHightInTiles) - 1;
+		bool enemy = false;
+		bool player = true;
 		makeMap();
 		generateNeighborsOfTiles();
-		SpawnEntity(EntityPlayerFighter,149);
-		SpawnEntity(EntityPlayerFighter,0);
-		SpawnEntity(EntityPlayerFighter,100);
-		SpawnEntity(EntityPlayerFighter,50);
-		SpawnEntity(EntityPlayerFighter,49);
-		SpawnEntity(EntityPlayerFighter,10);
-		SpawnEntity(EntityEnemyFighter,600);
-		SpawnEntity(EntityEnemyFighter,620);
-		SpawnEntity(EntityEnemyFighter,115);
-		SpawnEntity(EntityEnemyFighter,800);
+		SpawnEntity(EntityPlayerFighter,GD.RandRange(mapStart, mapMiddle),player);
+		SpawnEntity(EntityPlayerFighter,GD.RandRange(mapStart, mapMiddle),player);
+		SpawnEntity(EntityPlayerFighter,GD.RandRange(mapStart, mapMiddle),player);
+		SpawnEntity(EntityPlayerFighter,GD.RandRange(mapStart, mapMiddle),player);
+		SpawnEntity(EntityPlayerFighter,GD.RandRange(mapStart, mapMiddle),player);
+		SpawnEntity(EntityPlayerFighter,GD.RandRange(mapStart, mapMiddle),player);
+		SpawnEntity(EntityEnemyFighter,GD.RandRange(mapMiddle + 1, mapEnd),enemy);
+		SpawnEntity(EntityEnemyFighter,GD.RandRange(mapMiddle + 1, mapEnd),enemy);
+		SpawnEntity(EntityEnemyFighter,GD.RandRange(mapMiddle + 1, mapEnd),enemy);
+		SpawnEntity(EntityEnemyFighter,GD.RandRange(mapMiddle + 1, mapEnd),enemy);
 		PositionAllEntintys();
 		takeTurn();
 	}
@@ -157,6 +168,7 @@ private int lastHoveredIndex = -1;
 public override void _Process(double delta)
 {
     // 1. Get Mouse Position relative to the TileMap
+	if (isMoving) return;
     Vector2 mousePos = worldMap.GetLocalMousePosition();
     Vector2I gridPos = worldMap.LocalToMap(mousePos);
     
@@ -277,35 +289,44 @@ public void generateNeighborsOfTiles()
     }
 }
 
-public void SpawnEntity(PackedScene PackedEntityScene, int mapIndex)
+public void SpawnEntity(PackedScene PackedEntityScene, int mapIndex,bool player)
 {
-    if (PackedEntityScene == null)
+    // 1. Safety Check: If index is out of bounds, wrap it
+    int index = mapIndex % allTiles.Length;
+
+    // 2. The "Bad Tile" Condition
+    bool isMountain = allTiles[index].tileName == "mountain";
+    bool isOccupied = allTiles[index].occupant != null;
+
+    if (isMountain || isOccupied)
     {
-        GD.PrintErr("EntityScene not assigned in Inspector!");
-        return;
-    }
-	if (mapIndex < 0 || mapIndex >= allTiles.Length)
-    {
-        GD.PrintErr("Map index out of bounds!");
-        return;
+			if (player)
+			{
+					SpawnEntity(EntityPlayerFighter,GD.RandRange(mapStart, mapMiddle),player);
+			}
+			else
+			{
+					SpawnEntity(EntityEnemyFighter,GD.RandRange(mapMiddle + 1, mapEnd),player);
+			}
+        return; 
     }
 
-    // 3. Create the instance
-    var entity = PackedEntityScene.Instantiate<Node2D>();
-    
-    AddChild(entity);
+    // 4. The "Good Tile" Base Case: Actually spawn the entity
+    var entityNode = PackedEntityScene.Instantiate<Node2D>();
+    AddChild(entityNode);
 
-    if (entity is GridEntity gridEntity)
+    if (entityNode is GridEntity gridEntity)
     {
-        allTiles[mapIndex].occupant = gridEntity;
+        allTiles[index].occupant = gridEntity;
+        gridEntity.mapindex = index;
+        gridEntity.Node2DEntity = entityNode;
+        allEntitys.Add(gridEntity);
+        
+        // Ensure sprite reference is set (since _Ready might not have fired yet)
+        gridEntity.sprite = entityNode.GetNode<Sprite2D>("Sprite2D");
     }
-	allTiles[mapIndex].occupant.mapindex = mapIndex;
-	// Vector2 pixlePosition = new Vector2((1 * allTiles[mapIndex].tilePos.X * allTiles[mapIndex].occupant.spriteSize) + (allTiles[mapIndex].occupant.spriteSize / 2) ,(1 * allTiles[mapIndex].tilePos.Y  * allTiles[mapIndex].occupant.spriteSize) + (allTiles[mapIndex].occupant.spriteSize / 2));
-	allTiles[mapIndex].occupant.Node2DEntity = entity;
-	// allTiles[mapIndex].occupant.Node2DEntity.Position = pixlePosition;
-	allEntitys.Add(allTiles[mapIndex].occupant);
-	// allEntitys[0].Node2DEntity.Position = pixlePosition;
 }
+
 public void PositionAllEntintys()
 {
 	foreach (GridEntity entity in allEntitys)
@@ -368,7 +389,7 @@ public List<int> GetReachableTiles(int startIndex, int movementRange)
 
             // PREVENT WALKING THROUGH IMPASSABLE TERRAIN
             // You can adjust these string names based on your tile types
-            if (allTiles[next].tileName == "water" || allTiles[next].tileName == "mountain") 
+            if (allTiles[next].tileName == "mountain") 
                 continue;
 
             // PREVENT WALKING THROUGH OTHER ENTITIES
@@ -441,24 +462,79 @@ public List<int> GetPathToTarget(int targetIndex, int startIndex)
     path.Reverse(); // Make it go from Start -> Target
     return path;
 }
+
 public void MoveEntity(GridEntity entity, int newIndex)
 {
-    // 1. Update the Tile logic
-    allTiles[entity.mapindex].occupant = null; // Old tile is empty
-    allTiles[newIndex].occupant = entity;      // New tile is occupied
+    if (isMoving) return;
     
-    // 2. Update entity data
-    entity.mapindex = newIndex;
+    List<int> path = GetPathToTarget(newIndex, entity.mapindex);
+    if (path.Count == 0) return;
+
+    isMoving = true;
+
+    Path2D pathNode = new Path2D();
+    PathFollow2D follower = new PathFollow2D();
+	pathNode.TopLevel = true;
+    follower.Loop = false;
+    follower.Rotates = false; 
+
+    AddChild(pathNode);
+    pathNode.AddChild(follower);
+
+    Curve2D curve = new Curve2D();
     
-    // 3. Update Visuals
-    PositionAllEntintys(); // Re-calls your existing positioning logic
+    // --- FIX STARTS HERE ---
+    // Don't use GlobalPosition directly. 
+    // Use the TileIndexToWorldPos for the STARTING tile too.
+    curve.AddPoint(TileIndexToWorldPos(entity.mapindex));
+
+    foreach (int index in path)
+    {
+        curve.AddPoint(TileIndexToWorldPos(index));
+    }
+    // --- FIX ENDS HERE ---
+
+    pathNode.Curve = curve;
+
+    RemoteTransform2D remote = new RemoteTransform2D();
+    remote.RemotePath = entity.Node2DEntity.GetPath();
+    remote.UpdateRotation = false; 
+    follower.AddChild(remote);
+
+    float duration = path.Count * 0.15f; 
+    Tween tween = GetTree().CreateTween();
     
-    // 4. Cleanup
-    highlightLayer.Clear();
-    // pathLayer.Clear(); // If you made a purple path layer
-    currentReachableTiles.Clear();
+    tween.TweenProperty(follower, "progress_ratio", 1.0f, duration)
+ 		.SetTrans(Tween.TransitionType.Quad)
+ 		.SetEase(Tween.EaseType.InOut); 
+
+    tween.Finished += () => {
+        allTiles[entity.mapindex].occupant = null;
+        allTiles[newIndex].occupant = entity;
+        entity.mapindex = newIndex;
+
+        // Ensure we snap to the same calculated position at the end
+        entity.Node2DEntity.GlobalPosition = TileIndexToWorldPos(newIndex);
+        
+        pathNode.QueueFree();
+        isMoving = false;
+        
+        highlightLayer.Clear();
+        pathLayer.Clear();
+        currentReachableTiles.Clear();
+        
+        takeTurn();
+    };
+}
+
+private Vector2 TileIndexToWorldPos(int index)
+{
+    Vector2I tilePos = allTiles[index].tilePos;
+    // Calculate local position + offset to center of tile
+    float x = (tilePos.X * tileSizeInpixels) + (tileSizeInpixels / 2.0f);
+    float y = (tilePos.Y * tileSizeInpixels) + (tileSizeInpixels / 2.0f);
     
-    // 5. Next turn?
-    takeTurn();
+    // Return absolute world position (adding the WorldMap's own position)
+    return GlobalPosition + new Vector2(x, y);
 }
 }
