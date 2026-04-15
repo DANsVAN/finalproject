@@ -22,3 +22,8 @@ tile_set = ExtResource("4_xcgaf")
 unique_name_in_owner = true
 modulate = Color(0, 1, 0, 0.57254905)
 tile_set = ExtResource("4_xcgaf")
+
+[node name="PathLayer" type="TileMapLayer" parent="." unique_id=2073803309]
+unique_name_in_owner = true
+modulate = Color(1, 0, 1, 0.5137255)
+tile_set = ExtResource("4_xcgaf")

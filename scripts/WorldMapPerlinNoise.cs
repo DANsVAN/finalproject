@@ -23,6 +23,7 @@ public partial class WorldMapPerlinNoise : Node2D
 	float[,] worldArray;
 	TileMapLayer worldMap;
 	TileMapLayer highlightLayer;
+	TileMapLayer pathLayer;
 	int maxNumberOfTiles;
 	Tile[] allTiles;
 	GridEntity firstEntityInTheTimeline;
@@ -41,6 +42,7 @@ public partial class WorldMapPerlinNoise : Node2D
 		public Vector2I tilePos;
 		public Vector2I atlasCoords;
 		public GridEntity occupant = null;
+		public int parentIndex;
 
 		// Constructor (Optional, but useful)
 		public Tile()
@@ -57,6 +59,7 @@ public partial class WorldMapPerlinNoise : Node2D
 		maxNumberOfTiles = mapWidthInTiles * mapHightInTiles;
 		allTiles = new Tile[maxNumberOfTiles];
 		highlightLayer = GetNode<TileMapLayer>("%HighlightLayer");
+		pathLayer = GetNode<TileMapLayer>("%PathLayer");
 		
 		makeMap();
 		generateNeighborsOfTiles();
@@ -72,12 +75,6 @@ public partial class WorldMapPerlinNoise : Node2D
 		SpawnEntity(EntityEnemyFighter,800);
 		PositionAllEntintys();
 		takeTurn();
-		takeTurn();
-		// takeTurn();
-		// takeTurn();
-		// takeTurn();
-		// takeTurn();
-		// takeTurn();
 	}
 	public FastNoiseLite generateRandNoise()
 	{
@@ -154,9 +151,64 @@ public void generateMapFromNoise(FastNoiseLite noise)
 
 
 	// Called every frame. 'delta' is the elapsed time since the previous frame.
-	public override void _Process(double delta)
-	{
-	}
+private List<int> currentReachableTiles = new List<int>();
+private int lastHoveredIndex = -1;
+
+public override void _Process(double delta)
+{
+    // 1. Get Mouse Position relative to the TileMap
+    Vector2 mousePos = worldMap.GetLocalMousePosition();
+    Vector2I gridPos = worldMap.LocalToMap(mousePos);
+    
+    // Convert 2D Grid Pos to 1D Index
+    int hoverIndex = gridPos.Y * mapWidthInTiles + gridPos.X;
+
+    // Safety check: Is mouse inside map bounds?
+    if (gridPos.X < 0 || gridPos.X >= mapWidthInTiles || gridPos.Y < 0 || gridPos.Y >= mapHightInTiles) 
+        return;
+
+    // 2. Handle HOVER (purple Path)
+    if (hoverIndex != lastHoveredIndex)
+    {
+        lastHoveredIndex = hoverIndex;
+        if (currentReachableTiles.Contains(hoverIndex))
+        {
+            // Calculate and show the purple path
+            var path = GetPathToTarget(hoverIndex, firstEntityInTheTimeline.mapindex);
+            HighlightPath(path); // You'll create a second purple layer for this
+        }
+		else
+    	{
+        // Mouse is not on a reachable tile, so clear the purple path
+        pathLayer.Clear();
+    	}
+    }
+
+    // 3. Handle CLICK (Move Entity)
+    if (Input.IsActionJustPressed("left_mouse_click")) // Ensure this is defined in Input Map
+    {
+        if (currentReachableTiles.Contains(hoverIndex))
+        {
+            MoveEntity(firstEntityInTheTimeline, hoverIndex);
+        }
+		GD.Print("this was clicked");
+    }
+}
+public void HighlightPath(List<int> path)
+{
+    // 1. Clear the purple path from the last frame
+    pathLayer.Clear();
+
+    // 2. Use the same tile coordinates as your green highlights
+    Vector2I highlightAtlasCoord = new Vector2I(0, 3); 
+
+    // 3. Draw the purple tiles
+    foreach (int index in path)
+    {
+        Vector2I gridPos = allTiles[index].tilePos;
+        pathLayer.SetCell(gridPos, 0, highlightAtlasCoord);
+    }
+}
 	private void CenterMap()
     {
         // 1. Get the current viewport/screen size in pixels
@@ -336,6 +388,7 @@ public List<int> GetReachableTiles(int startIndex, int movementRange)
                 if (!costSoFar.ContainsKey(next) || newCost < costSoFar[next])
                 {
                     costSoFar[next] = newCost;
+					allTiles[next].parentIndex = current;
                     frontier.Enqueue(next, newCost); // Add to queue to explore its neighbors later
                 }
             }
@@ -370,10 +423,42 @@ public void takeTurn()
 
     GridEntity activeUnit = firstEntityInTheTimeline;
 
-    // 1. Calculate where they can go
-    List<int> reachableTiles = GetReachableTiles(activeUnit.mapindex, activeUnit.MovementRange);
+    // FIX: Assign the result to the class-level variable
+    currentReachableTiles = GetReachableTiles(activeUnit.mapindex, activeUnit.MovementRange);
 
-    // 2. Paint those tiles green!
-    HighlightReachableTiles(reachableTiles);
+    HighlightReachableTiles(currentReachableTiles);
+}
+public List<int> GetPathToTarget(int targetIndex, int startIndex)
+{
+    List<int> path = new List<int>();
+    int current = targetIndex;
+
+    while (current != startIndex)
+    {
+        path.Add(current);
+        current = allTiles[current].parentIndex;
+    }
+    path.Reverse(); // Make it go from Start -> Target
+    return path;
+}
+public void MoveEntity(GridEntity entity, int newIndex)
+{
+    // 1. Update the Tile logic
+    allTiles[entity.mapindex].occupant = null; // Old tile is empty
+    allTiles[newIndex].occupant = entity;      // New tile is occupied
+    
+    // 2. Update entity data
+    entity.mapindex = newIndex;
+    
+    // 3. Update Visuals
+    PositionAllEntintys(); // Re-calls your existing positioning logic
+    
+    // 4. Cleanup
+    highlightLayer.Clear();
+    // pathLayer.Clear(); // If you made a purple path layer
+    currentReachableTiles.Clear();
+    
+    // 5. Next turn?
+    takeTurn();
 }
 }
