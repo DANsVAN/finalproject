@@ -277,8 +277,8 @@ public void updateTimeline()
 				entity.CurrentSpeed += entity.BaseSpeed;
 				entity.sprite.Modulate = Colors.White;
 			}
-			firstEntityInTheTimeline.CurrentSpeed = firstEntityInTheTimeline.BaseSpeed;
-			firstEntityInTheTimeline.sprite.Modulate = Colors.Green;
 		}
+		firstEntityInTheTimeline.CurrentSpeed = firstEntityInTheTimeline.BaseSpeed;
+		firstEntityInTheTimeline.sprite.Modulate = Colors.Green;
 }
 }
