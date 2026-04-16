@@ -9,3 +9,25 @@ script = ExtResource("1_alx3s")
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=265545722]
 texture = ExtResource("2_8mnes")
 hframes = 4
+
+[node name="HealthBarRoot" type="Control" parent="."]
+z_index = 10
+layout_mode = 0
+offset_left = -12.0
+offset_top = -14.0
+offset_right = 12.0
+offset_bottom = -8.0
+
+[node name="HealthBar" type="ProgressBar" parent="HealthBarRoot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 0.0
+offset_bottom = 0.0
+show_percentage = false
+max_value = 100.0
+value = 100.0
+step = 1.0

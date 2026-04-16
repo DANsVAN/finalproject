@@ -5,6 +5,50 @@ using System.Collections.Generic;
 
 public partial class WorldMapPerlinNoise : Node2D
 {
+	private enum PlayerTurnMode
+	{
+		Movement,
+		Attack
+	}
+
+	private enum AttackPatternKind
+	{
+		Single,
+		Line,
+		Cone,
+		AoeRadius
+	}
+
+	private readonly struct PlayerAttackDefinition
+	{
+		public readonly string DisplayName;
+		public readonly AttackPatternKind Pattern;
+		public readonly int MaxRange;
+		public readonly int Damage;
+		public readonly int LineLength;
+		public readonly int ConeDepth;
+		public readonly int AoeRadius;
+
+		public PlayerAttackDefinition(string displayName, AttackPatternKind pattern, int maxRange, int damage, int lineLength = 0, int coneDepth = 0, int aoeRadius = 0)
+		{
+			DisplayName = displayName;
+			Pattern = pattern;
+			MaxRange = maxRange;
+			Damage = damage;
+			LineLength = lineLength;
+			ConeDepth = coneDepth;
+			AoeRadius = aoeRadius;
+		}
+	}
+
+	// Change to adjust attack stats
+	private static readonly PlayerAttackDefinition[] PlayerAttacks =
+	{
+		new PlayerAttackDefinition("Strike", AttackPatternKind.Single, maxRange: 2, damage: 8),
+		new PlayerAttackDefinition("Line", AttackPatternKind.Line, maxRange: 4, damage: 5, lineLength: 4),
+		new PlayerAttackDefinition("Blast", AttackPatternKind.AoeRadius, maxRange: 3, damage: 3, aoeRadius: 1),
+	};
+
 	[Export] int mapWidthInTiles = 50;
 	[Export] int mapHightInTiles = 25;
 	[Export] int tileSizeInpixels = 16;
@@ -25,11 +69,22 @@ public partial class WorldMapPerlinNoise : Node2D
 	TileMapLayer worldMap;
 	TileMapLayer highlightLayer;
 	TileMapLayer pathLayer;
+	TileMapLayer attackLayer;
 	int maxNumberOfTiles;
 	Tile[] allTiles;
 	GridEntity firstEntityInTheTimeline;
 	List<GridEntity> allEntitys = new List<GridEntity> {};
 	TimelineOverlay timelineOverlay;
+	PlayerAttackController playerAttackUi;
+
+	private PlayerTurnMode _playerMode = PlayerTurnMode.Movement;
+	private int _selectedAttackIndex = -1;
+	private bool _playerHasMovedThisTurn;
+	private bool _playerHasAttackedThisTurn;
+	private int _lastAttackHoverIndex = -1;
+
+	private static readonly Vector2I AttackReachAtlas = new Vector2I(1, 0); // snow tile in current tileset
+	private static readonly Vector2I AttackPreviewAtlas = new Vector2I(0, 3); // grass tile placeholder
 	public bool isplayer = true;
 	public int mapStart = 0;
 	public int mapMiddle;
@@ -69,7 +124,13 @@ public partial class WorldMapPerlinNoise : Node2D
 		allTiles = new Tile[maxNumberOfTiles];
 		highlightLayer = GetNode<TileMapLayer>("%HighlightLayer");
 		pathLayer = GetNode<TileMapLayer>("%PathLayer");
+		attackLayer = GetNode<TileMapLayer>("%AttackLayer");
 		timelineOverlay = GetNode<TimelineOverlay>("%TimelineOverlay");
+		playerAttackUi = GetNode<PlayerAttackController>("%PlayerAttackUi");
+
+		playerAttackUi.AttackSelected += OnPlayerAttackSelected;
+		playerAttackUi.AttackDeselected += OnPlayerAttackDeselected;
+		playerAttackUi.EndTurnPressed += OnPlayerEndTurnPressed;
 		mapMiddle = (mapWidthInTiles * mapHightInTiles)/2;
 		mapEnd = (mapWidthInTiles * mapHightInTiles) - 1;
 		bool enemy = false;
@@ -167,7 +228,9 @@ public override void _Process(double delta)
 	if (isMoving || firstEntityInTheTimeline == null || !firstEntityInTheTimeline.IsPlayer)
 	{
 		pathLayer.Clear();
+		attackLayer.Clear();
 		lastHoveredIndex = -1;
+		_lastAttackHoverIndex = -1;
 		return;
 	}
 
@@ -182,29 +245,59 @@ public override void _Process(double delta)
 	if (gridPos.X < 0 || gridPos.X >= mapWidthInTiles || gridPos.Y < 0 || gridPos.Y >= mapHightInTiles) 
 		return;
 
-	// 2. Handle HOVER (purple Path)
-	if (hoverIndex != lastHoveredIndex)
+	if (_playerMode == PlayerTurnMode.Movement)
 	{
-		lastHoveredIndex = hoverIndex;
-		if (currentReachableTiles.Contains(hoverIndex))
+		// 2. Handle HOVER (purple Path)
+		if (hoverIndex != lastHoveredIndex)
 		{
-			// Calculate and show the purple path
-			var path = GetPathToTarget(hoverIndex, firstEntityInTheTimeline.mapindex);
-			HighlightPath(path); // You'll create a second purple layer for this
+			lastHoveredIndex = hoverIndex;
+			if (!_playerHasMovedThisTurn && currentReachableTiles.Contains(hoverIndex))
+			{
+				var path = GetPathToTarget(hoverIndex, firstEntityInTheTimeline.mapindex);
+				HighlightPath(path);
+			}
+			else
+			{
+				pathLayer.Clear();
+			}
 		}
-		else
+
+		// 3. Handle CLICK (Move Entity)
+		if (Input.IsActionJustPressed("left_mouse_click"))
 		{
-		// Mouse is not on a reachable tile, so clear the purple path
-		pathLayer.Clear();
+			if (!_playerHasMovedThisTurn && currentReachableTiles.Contains(hoverIndex))
+				MoveEntity(firstEntityInTheTimeline, hoverIndex, OnPlayerMoveFinished);
 		}
 	}
-
-	// 3. Handle CLICK (Move Entity)
-	if (Input.IsActionJustPressed("left_mouse_click")) // Ensure this is defined in Input Map
+	else if (_playerMode == PlayerTurnMode.Attack && _selectedAttackIndex >= 0 && _selectedAttackIndex < PlayerAttacks.Length)
 	{
-		if (currentReachableTiles.Contains(hoverIndex))
+		PlayerAttackDefinition attack = PlayerAttacks[_selectedAttackIndex];
+		List<int> attackReach = GetTilesWithinStepRange(firstEntityInTheTimeline.mapindex, attack.MaxRange);
+
+		if (hoverIndex != _lastAttackHoverIndex)
 		{
-			MoveEntity(firstEntityInTheTimeline, hoverIndex);
+			_lastAttackHoverIndex = hoverIndex;
+			DrawAttackReachTiles(attackReach);
+
+			if (attackReach.Contains(hoverIndex))
+			{
+				List<int> preview = BuildAttackPatternTiles(firstEntityInTheTimeline, hoverIndex, attack);
+				DrawAttackPreviewTiles(preview);
+			}
+			else
+			{
+				DrawAttackReachTiles(attackReach);
+			}
+		}
+
+		if (Input.IsActionJustPressed("left_mouse_click"))
+		{
+			if (!_playerHasAttackedThisTurn && attackReach.Contains(hoverIndex))
+			{
+				List<int> affected = BuildAttackPatternTiles(firstEntityInTheTimeline, hoverIndex, attack);
+				if (ContainsEnemyInTiles(affected))
+					TryExecutePlayerAttack(firstEntityInTheTimeline, attack, affected);
+			}
 		}
 	}
 }
@@ -493,6 +586,399 @@ public void HighlightReachableTiles(List<int> reachableIndices)
 	}
 }
 
+// When the player selects an attack, the attack is highlighted and the player can attack the target tile
+private void OnPlayerAttackSelected(int attackIndex)
+{
+	if (!IsPlayerUnit(firstEntityInTheTimeline)) return;
+	if (_playerHasAttackedThisTurn) return;
+
+	_playerMode = PlayerTurnMode.Attack;
+	_selectedAttackIndex = attackIndex;
+
+	pathLayer.Clear();
+	highlightLayer.Clear();
+	lastHoveredIndex = -1;
+	_lastAttackHoverIndex = -1;
+
+	PlayerAttackDefinition selectedAttack = PlayerAttacks[attackIndex];
+	List<int> attackReach = GetTilesWithinStepRange(firstEntityInTheTimeline.mapindex, selectedAttack.MaxRange);
+	DrawAttackReachTiles(attackReach);
+
+	RefreshPlayerMovementHighlights();
+}
+
+// When the player deselects an attack, the attack is cleared and the player can move again
+private void OnPlayerAttackDeselected()
+{
+	if (!IsPlayerUnit(firstEntityInTheTimeline)) return;
+
+	_playerMode = PlayerTurnMode.Movement;
+	_selectedAttackIndex = -1;
+
+	attackLayer.Clear();
+	pathLayer.Clear();
+	lastHoveredIndex = -1;
+	_lastAttackHoverIndex = -1;
+
+	RefreshPlayerMovementHighlights();
+}
+
+// When the player ends their turn, the attack is cleared and the player can move again
+private void OnPlayerEndTurnPressed()
+{
+	if (!IsPlayerUnit(firstEntityInTheTimeline)) return;
+	if (isMoving) return;
+
+	ExitAttackMode(clearSelection: true);
+	highlightLayer.Clear();
+	pathLayer.Clear();
+	attackLayer.Clear();
+	currentReachableTiles.Clear();
+	takeTurn();
+}
+
+// When the player begins their turn, the attack is cleared and the player can move again
+private void BeginPlayerTurn(GridEntity player)
+{
+	playerAttackUi?.SetTurnActive(true);
+	playerAttackUi?.SetBusy(false);
+	playerAttackUi?.ClearAttackSelection();
+	playerAttackUi?.SetAttackSelectionLocked(false);
+
+	_playerMode = PlayerTurnMode.Movement;
+	_selectedAttackIndex = -1;
+	_playerHasMovedThisTurn = false;
+	_playerHasAttackedThisTurn = false;
+
+	attackLayer.Clear();
+	pathLayer.Clear();
+	lastHoveredIndex = -1;
+	_lastAttackHoverIndex = -1;
+
+	currentReachableTiles = GetReachableTiles(player.mapindex, player.MovementRange);
+	HighlightReachableTiles(currentReachableTiles);
+}
+
+// When the player finishes moving, the path is cleared and the player can attack again
+private void OnPlayerMoveFinished()
+{
+	_playerHasMovedThisTurn = true;
+	pathLayer.Clear();
+	lastHoveredIndex = -1;
+
+	if (IsPlayerUnit(firstEntityInTheTimeline))
+	{
+		playerAttackUi?.SetBusy(false);
+		RefreshPlayerMovementHighlights();
+
+		if (_playerMode == PlayerTurnMode.Attack && _selectedAttackIndex >= 0 && _selectedAttackIndex < PlayerAttacks.Length && !_playerHasAttackedThisTurn)
+		{
+			PlayerAttackDefinition attack = PlayerAttacks[_selectedAttackIndex];
+			List<int> attackReach = GetTilesWithinStepRange(firstEntityInTheTimeline.mapindex, attack.MaxRange);
+			DrawAttackReachTiles(attackReach);
+
+			if (_lastAttackHoverIndex >= 0 && attackReach.Contains(_lastAttackHoverIndex))
+			{
+				List<int> preview = BuildAttackPatternTiles(firstEntityInTheTimeline, _lastAttackHoverIndex, attack);
+				DrawAttackPreviewTiles(preview);
+			}
+		}
+	}
+}
+
+// Refreshes the player movement highlights
+private void RefreshPlayerMovementHighlights()
+{
+	if (!IsPlayerUnit(firstEntityInTheTimeline)) return;
+
+	if (_playerHasMovedThisTurn)
+	{
+		highlightLayer.Clear();
+		currentReachableTiles.Clear();
+		return;
+	}
+
+	currentReachableTiles = GetReachableTiles(firstEntityInTheTimeline.mapindex, firstEntityInTheTimeline.MovementRange);
+	HighlightReachableTiles(currentReachableTiles);
+}
+
+// Exits the attack mode and clears the attack layer
+private void ExitAttackMode(bool clearSelection)
+{
+	attackLayer.Clear();
+	_playerMode = PlayerTurnMode.Movement;
+	_selectedAttackIndex = -1;
+	_lastAttackHoverIndex = -1;
+
+	if (clearSelection)
+		playerAttackUi?.ClearAttackSelection();
+
+	playerAttackUi?.SetAttackSelectionLocked(_playerHasAttackedThisTurn);
+	RefreshPlayerMovementHighlights();
+}
+
+// Gets the Manhattan distance between two tiles
+// Manhattan distance is the distance between two points in a grid, calculated by the sum of the absolute differences of the x and y coordinates
+private int GetManhattanTileDistance(int indexA, int indexB)
+{
+	Vector2I a = GetTilePos(indexA);
+	Vector2I b = GetTilePos(indexB);
+	return Math.Abs(a.X - b.X) + Math.Abs(a.Y - b.Y);
+}
+
+// Gets the tiles within a step range of the starting tile
+// The step range is the maximum number of tiles that the entity can move in a single turn
+private List<int> GetTilesWithinStepRange(int startIndex, int maxSteps)
+{
+	Dictionary<int, int> costSoFar = new Dictionary<int, int>();
+	PriorityQueue<int, int> frontier = new PriorityQueue<int, int>();
+
+	frontier.Enqueue(startIndex, 0);
+	costSoFar[startIndex] = 0;
+
+	while (frontier.Count > 0)
+	{
+		int current = frontier.Dequeue();
+
+		foreach (int next in allTiles[current].neighbors)
+		{
+			if (next == -1) continue;
+			if (allTiles[next].tileName == "mountain")
+				continue;
+
+			int costToMove = allTiles[next].movementCost > 0 ? allTiles[next].movementCost : 1;
+			int newCost = costSoFar[current] + costToMove;
+
+			if (newCost <= maxSteps)
+			{
+				if (!costSoFar.ContainsKey(next) || newCost < costSoFar[next])
+				{
+					costSoFar[next] = newCost;
+					frontier.Enqueue(next, newCost);
+				}
+			}
+		}
+	}
+
+	return new List<int>(costSoFar.Keys);
+}
+
+// Draws the attack reach tiles to the attack layer
+private void DrawAttackReachTiles(List<int> reachableIndices)
+{
+	attackLayer.Clear();
+
+	foreach (int index in reachableIndices)
+	{
+		Vector2I gridPos = allTiles[index].tilePos;
+		attackLayer.SetCell(gridPos, 0, AttackReachAtlas);
+	}
+}
+
+// Draws the attack preview tiles to the attack layer
+private void DrawAttackPreviewTiles(List<int> previewIndices)
+{
+	foreach (int index in previewIndices)
+	{
+		Vector2I gridPos = allTiles[index].tilePos;
+		attackLayer.SetCell(gridPos, 0, AttackPreviewAtlas);
+	}
+}
+
+// Builds the attack pattern tiles for the attack layer
+private List<int> BuildAttackPatternTiles(GridEntity attacker, int originIndex, PlayerAttackDefinition attack)
+{
+	List<int> tiles = new List<int>();
+	if (attacker == null) return tiles;
+
+	switch (attack.Pattern)
+	{
+		case AttackPatternKind.Single:
+			tiles.Add(originIndex);
+			break;
+
+		case AttackPatternKind.Line:
+			AddLinePatternTiles(attacker.mapindex, originIndex, attack.LineLength, tiles);
+			break;
+
+		case AttackPatternKind.Cone:
+			AddConePatternTiles(attacker.mapindex, originIndex, attack.ConeDepth, tiles);
+			break;
+
+		case AttackPatternKind.AoeRadius:
+			AddAoeRadiusTiles(originIndex, attack.AoeRadius, tiles);
+			break;
+	}
+
+	return tiles;
+}
+
+// Adds the line attack pattern tiles to the attack layer
+private void AddLinePatternTiles(int attackerIndex, int originIndex, int maxLength, List<int> output)
+{
+	Vector2I from = GetTilePos(attackerIndex);
+	Vector2I to = GetTilePos(originIndex);
+	int dx = Math.Sign(to.X - from.X);
+	int dy = Math.Sign(to.Y - from.Y);
+
+	if (dx == 0 && dy == 0)
+		return;
+
+	int currentX = from.X;
+	int currentY = from.Y;
+
+	for (int step = 0; step < maxLength; step++)
+	{
+		currentX += dx;
+		currentY += dy;
+
+		if (currentX < 0 || currentX >= mapWidthInTiles || currentY < 0 || currentY >= mapHightInTiles)
+			break;
+
+		int idx = currentY * mapWidthInTiles + currentX;
+		if (allTiles[idx].tileName == "mountain")
+			break;
+
+		output.Add(idx);
+	}
+}
+
+// Adds the cone attack pattern tiles to the attack layer
+private void AddConePatternTiles(int attackerIndex, int originIndex, int depth, List<int> output)
+{
+	Vector2I a = GetTilePos(attackerIndex);
+	Vector2I o = GetTilePos(originIndex);
+
+	int dx = Math.Sign(o.X - a.X);
+	int dy = Math.Sign(o.Y - a.Y);
+	if (dx == 0 && dy == 0)
+		return;
+
+	if (dx != 0 && dy != 0)
+	{
+		AddConeCardinal(attackerIndex, new Vector2I(dx, 0), depth, output);
+		AddConeCardinal(attackerIndex, new Vector2I(0, dy), depth, output);
+		return;
+	}
+
+	Vector2I dir = new Vector2I(dx, dy);
+	int perpX = -dir.Y;
+	int perpY = dir.X;
+
+	for (int d = 1; d <= depth; d++)
+	{
+		int baseX = a.X + dir.X * d;
+		int baseY = a.Y + dir.Y * d;
+
+		for (int s = -d; s <= d; s++)
+		{
+			int x = baseX + perpX * s;
+			int y = baseY + perpY * s;
+
+			if (x < 0 || x >= mapWidthInTiles || y < 0 || y >= mapHightInTiles)
+				continue;
+
+			int idx = y * mapWidthInTiles + x;
+			if (allTiles[idx].tileName == "mountain")
+				continue;
+
+			output.Add(idx);
+		}
+	}
+}
+
+// Adds the cone cardinal attack pattern tiles to the attack layer
+private void AddConeCardinal(int attackerIndex, Vector2I dir, int depth, List<int> output)
+{
+	Vector2I a = GetTilePos(attackerIndex);
+	int perpX = -dir.Y;
+	int perpY = dir.X;
+
+	for (int d = 1; d <= depth; d++)
+	{
+		int baseX = a.X + dir.X * d;
+		int baseY = a.Y + dir.Y * d;
+
+		for (int s = -d; s <= d; s++)
+		{
+			int x = baseX + perpX * s;
+			int y = baseY + perpY * s;
+
+			if (x < 0 || x >= mapWidthInTiles || y < 0 || y >= mapHightInTiles)
+				continue;
+
+			int idx = y * mapWidthInTiles + x;
+			if (allTiles[idx].tileName == "mountain")
+				continue;
+
+			output.Add(idx);
+		}
+	}
+}
+
+// Adds the AOE radius attack pattern tiles to the attack layer
+private void AddAoeRadiusTiles(int centerIndex, int radius, List<int> output)
+{
+	Vector2I center = GetTilePos(centerIndex);
+
+	for (int y = center.Y - radius; y <= center.Y + radius; y++)
+	{
+		for (int x = center.X - radius; x <= center.X + radius; x++)
+		{
+			if (x < 0 || x >= mapWidthInTiles || y < 0 || y >= mapHightInTiles)
+				continue;
+
+			if (GetManhattanTileDistance(centerIndex, y * mapWidthInTiles + x) > radius)
+				continue;
+
+			int idx = y * mapWidthInTiles + x;
+			if (allTiles[idx].tileName == "mountain")
+				continue;
+
+			output.Add(idx);
+		}
+	}
+}
+
+// Checks if the list of tiles contains an enemy
+private bool ContainsEnemyInTiles(List<int> tiles)
+{
+	foreach (int idx in tiles)
+	{
+		GridEntity occ = allTiles[idx].occupant;
+		if (IsEnemy(occ))
+			return true;
+	}
+
+	return false;
+}
+
+private void TryExecutePlayerAttack(GridEntity player, PlayerAttackDefinition attack, List<int> affectedTiles)
+{
+	if (player == null || _playerHasAttackedThisTurn) return;
+
+	foreach (int idx in affectedTiles)
+	{
+		GridEntity target = allTiles[idx].occupant;
+		if (!IsEnemy(target)) continue;
+
+		CombatResolver.TryAttack(player, target, attack.MaxRange, attack.Damage, GetTilePos, RemoveEntity);
+	}
+
+	_playerHasAttackedThisTurn = true;
+	attackLayer.Clear();
+	pathLayer.Clear();
+	lastHoveredIndex = -1;
+	_lastAttackHoverIndex = -1;
+
+	playerAttackUi?.SetAttackSelectionLocked(true);
+	_playerMode = PlayerTurnMode.Movement;
+	_selectedAttackIndex = -1;
+	playerAttackUi?.ClearAttackSelection();
+
+	RefreshPlayerMovementHighlights();
+}
+
 // Checks if an entity is an enemy
 private bool IsEnemy(GridEntity entity)
 {
@@ -608,7 +1094,9 @@ public async void takeTurn() // Mark as async to allow a small delay for "thinki
 	{
 		highlightLayer.Clear();
 		pathLayer.Clear();
+		attackLayer.Clear();
 		currentReachableTiles.Clear();
+		playerAttackUi?.SetTurnActive(false);
 		return;
 	}
 
@@ -618,11 +1106,7 @@ public async void takeTurn() // Mark as async to allow a small delay for "thinki
 
 	if (IsPlayerUnit(activeUnit))
 	{
-		// 1. Calculate player reachable tiles for UI and input.
-		currentReachableTiles = GetReachableTiles(activeUnit.mapindex, activeUnit.MovementRange);
-
-		// Player's turn: Just highlight and wait for input in _Process
-		HighlightReachableTiles(currentReachableTiles);
+		BeginPlayerTurn(activeUnit);
 	}
 	else
 	{
@@ -630,6 +1114,8 @@ public async void takeTurn() // Mark as async to allow a small delay for "thinki
 		currentReachableTiles.Clear();
 		highlightLayer.Clear();
 		pathLayer.Clear();
+		attackLayer.Clear();
+		playerAttackUi?.SetTurnActive(false);
 		
 		// Small delay so the player can see who is moving
 		await ToSignal(GetTree().CreateTimer(0.5), "timeout");
@@ -655,17 +1141,23 @@ public List<int> GetPathToTarget(int targetIndex, int startIndex)
 public void MoveEntity(GridEntity entity, int newIndex, Action onMoveComplete = null)
 {
 	if (isMoving) return;
+
+	if (IsPlayerUnit(entity))
+		playerAttackUi?.SetBusy(true);
 	
 	List<int> path = GetPathToTarget(newIndex, entity.mapindex);
 	if (path.Count == 0)
 	{
 		highlightLayer.Clear();
 		pathLayer.Clear();
+		attackLayer.Clear();
 		currentReachableTiles.Clear();
 		if (onMoveComplete != null)
 			onMoveComplete();
-		else
+		else if (!IsPlayerUnit(entity))
 			takeTurn();
+		else
+			OnPlayerMoveFinished();
 		return;
 	}
 
@@ -720,12 +1212,15 @@ public void MoveEntity(GridEntity entity, int newIndex, Action onMoveComplete = 
 		
 		highlightLayer.Clear();
 		pathLayer.Clear();
+		attackLayer.Clear();
 		currentReachableTiles.Clear();
 
 		if (onMoveComplete != null)
 			onMoveComplete();
-		else
+		else if (!IsPlayerUnit(entity))
 			takeTurn();
+		else
+			OnPlayerMoveFinished();
 	};
 }
 

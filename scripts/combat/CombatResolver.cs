@@ -26,15 +26,24 @@ public static class CombatResolver
 		Func<int, Vector2I> getTilePos,
 		Action<GridEntity> onKilled)
 	{
+		return TryAttack(attacker, target, attacker.AttackRange, attacker.BaseDamage, getTilePos, onKilled);
+	}
+
+	public static bool TryAttack(
+		GridEntity attacker,
+		GridEntity target,
+		int attackRange,
+		int damage,
+		Func<int, Vector2I> getTilePos,
+		Action<GridEntity> onKilled)
+	{
 		if (attacker == null || target == null) return false;
 		if (target.CurrentHealth <= 0) return false;
-		if (!IsInAttackRange(attacker.mapindex, target.mapindex, attacker.AttackRange, getTilePos)) return false;
+		if (!IsInAttackRange(attacker.mapindex, target.mapindex, attackRange, getTilePos)) return false;
 
-		target.TakeDamage(attacker.BaseDamage);
-		if (target.CurrentHealth <= 0) 
-		{
+		target.TakeDamage(damage);
+		if (target.CurrentHealth <= 0)
 			onKilled?.Invoke(target);
-		}
 
 		return true;
 	}

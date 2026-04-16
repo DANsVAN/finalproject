@@ -8,6 +8,7 @@ public partial class PlayerFighter : GridEntity
 	}
 	public override void _Ready()
     {
+		base._Ready();
         sprite = GetNode<Sprite2D>("Sprite2D");
     }
 }
