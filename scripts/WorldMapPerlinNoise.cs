@@ -492,24 +492,131 @@ public void HighlightReachableTiles(List<int> reachableIndices)
 		highlightLayer.SetCell(gridPos, 0, highlightAtlasCoord);
 	}
 }
-// public void takeTurn()
-// {
-//     updateTimeline();
 
-//     GridEntity activeUnit = firstEntityInTheTimeline;
+// Checks if an entity is an enemy
+private bool IsEnemy(GridEntity entity)
+{
+	return entity != null && !entity.IsPlayer;
+}
 
-//     // FIX: Assign the result to the class-level variable
-//     currentReachableTiles = GetReachableTiles(activeUnit.mapindex, activeUnit.MovementRange);
+// Checks if an entity is a player
+private bool IsPlayerUnit(GridEntity entity)
+{
+	return entity != null && entity.IsPlayer;
+}
 
-//     HighlightReachableTiles(currentReachableTiles);
-// }
+// Get the position of a tile within the grid
+private Vector2I GetTilePos(int index)
+{
+	return allTiles[index].tilePos;
+}
+
+// Gets the movement cost of a tile based on the tile's type
+private int GetMovementCost(int index)
+{
+	return allTiles[index].movementCost;
+}
+
+// Removes an entity from the grid
+private void RemoveEntity(GridEntity entity)
+{
+	if (entity == null) return;
+
+	if (entity.mapindex >= 0 && entity.mapindex < allTiles.Length && allTiles[entity.mapindex].occupant == entity)
+		allTiles[entity.mapindex].occupant = null;
+
+	allEntitys.Remove(entity);
+	entity.Node2DEntity?.QueueFree();
+}
+
+// Checks if either all players or all enemies are dead
+private bool IsCombatOver()
+{
+	bool hasPlayers = false;
+	bool hasEnemies = false;
+
+	foreach (GridEntity entity in allEntitys)
+	{
+		if (IsPlayerUnit(entity)) hasPlayers = true;
+		if (IsEnemy(entity)) hasEnemies = true;
+	}
+
+	return !hasPlayers || !hasEnemies;
+}
+
+// Executes an enemy's turn
+private void ExecuteEnemyTurn(GridEntity enemy)
+{
+	// 1. Get the reachable tiles for the enemy
+	List<int> reachableTiles = GetReachableTiles(enemy.mapindex, enemy.MovementRange);
+
+	// 2. Choose an action for the enemy based on the best utility score
+	EnemyAi.Decision decision = EnemyAi.ChooseAction(
+		enemy,
+		allEntitys,
+		reachableTiles,
+		GetTilePos,
+		GetMovementCost);
+
+	// 3. If the enemy is ending their turn or doesn't have a target, end their turn
+	if (decision.Kind == EnemyAi.ActionKind.EndTurn || decision.Target == null)
+	{
+		takeTurn();
+		return;
+	}
+
+	// 4. If the enemy is attacking, perform the attack and end their turn
+	if (decision.Kind == EnemyAi.ActionKind.AttackNow)
+	{
+		CombatResolver.TryBasicAttack(enemy, decision.Target, GetTilePos, RemoveEntity);
+		takeTurn();
+		return;
+	}
+
+	// 5. If the enemy is moving, move them to the target tile and end their turn
+	MoveEntity(enemy, decision.MoveToIndex, () =>
+	{
+		if (IsCombatOver())
+		{
+			highlightLayer.Clear();
+			pathLayer.Clear();
+			currentReachableTiles.Clear();
+			return;
+		}
+
+		// 6. If the enemy is moving, choose an action for the enemy based on the best utility score
+		EnemyAi.Decision postMoveDecision = EnemyAi.ChooseAction(
+			enemy,
+			allEntitys,
+			Array.Empty<int>(),
+			GetTilePos,
+			GetMovementCost);
+
+		// 7. If the enemy is attacking, perform the attack and end their turn
+		if (postMoveDecision.Kind == EnemyAi.ActionKind.AttackNow && postMoveDecision.Target != null)
+			CombatResolver.TryBasicAttack(enemy, postMoveDecision.Target, GetTilePos, RemoveEntity);
+
+		// 8. End the enemy's turn
+		takeTurn();
+	});
+}
 
 public async void takeTurn() // Mark as async to allow a small delay for "thinking"
 {
+	// Checks if combat is over and clears the highlight and path layers
+	if (IsCombatOver())
+	{
+		highlightLayer.Clear();
+		pathLayer.Clear();
+		currentReachableTiles.Clear();
+		return;
+	}
+
 	updateTimeline();
 	GridEntity activeUnit = firstEntityInTheTimeline;
+	if (activeUnit == null) return;
 
-	if (activeUnit.IsPlayer)
+	if (IsPlayerUnit(activeUnit))
 	{
 		// 1. Calculate player reachable tiles for UI and input.
 		currentReachableTiles = GetReachableTiles(activeUnit.mapindex, activeUnit.MovementRange);
@@ -523,48 +630,12 @@ public async void takeTurn() // Mark as async to allow a small delay for "thinki
 		currentReachableTiles.Clear();
 		highlightLayer.Clear();
 		pathLayer.Clear();
-		List<int> enemyReachableTiles = GetReachableTiles(activeUnit.mapindex, activeUnit.MovementRange);
 		
 		// Small delay so the player can see who is moving
 		await ToSignal(GetTree().CreateTimer(0.5), "timeout");
 
-		PerformEnemyAI(activeUnit, enemyReachableTiles);
+		ExecuteEnemyTurn(activeUnit);
 	}
-}
-public void PerformEnemyAI(GridEntity enemy, List<int> enemyReachableTiles)
-{
-	int targetPlayerIndex = GetClosestPlayerIndex(enemy.mapindex);
-	if (targetPlayerIndex == -1) return; // No players left!
-
-	Vector2I playerPos = allTiles[targetPlayerIndex].tilePos;
-	int bestTileIndex = enemy.mapindex;
-	float closestDistToPlayer = float.MaxValue;
-
-	// Loop through all tiles the enemy CAN reach this turn
-	foreach (int tileIndex in enemyReachableTiles)
-	{
-		// We want the tile that is closest to the player's coordinate
-		float dist = allTiles[tileIndex].tilePos.DistanceTo(playerPos);
-		
-		// Optional: If you want them to stop 1 tile away (attack range),
-		// you can add logic here to prefer a distance of 1.0.
-
-
-		if (Mathf.Abs(dist - enemy.AttackRange) < 0.1f) 
-		{
-			bestTileIndex = tileIndex;
-			break; // Found an attack spot!
-		}
-
-		if (dist < closestDistToPlayer)
-		{
-			closestDistToPlayer = dist;
-			bestTileIndex = tileIndex;
-		}
-	}
-
-	// Move to the best calculated tile
-	MoveEntity(enemy, bestTileIndex);
 }
 
 public List<int> GetPathToTarget(int targetIndex, int startIndex)
@@ -581,12 +652,22 @@ public List<int> GetPathToTarget(int targetIndex, int startIndex)
 	return path;
 }
 
-public void MoveEntity(GridEntity entity, int newIndex)
+public void MoveEntity(GridEntity entity, int newIndex, Action onMoveComplete = null)
 {
 	if (isMoving) return;
 	
 	List<int> path = GetPathToTarget(newIndex, entity.mapindex);
-	if (path.Count == 0) return;
+	if (path.Count == 0)
+	{
+		highlightLayer.Clear();
+		pathLayer.Clear();
+		currentReachableTiles.Clear();
+		if (onMoveComplete != null)
+			onMoveComplete();
+		else
+			takeTurn();
+		return;
+	}
 
 	isMoving = true;
 
@@ -640,8 +721,11 @@ public void MoveEntity(GridEntity entity, int newIndex)
 		highlightLayer.Clear();
 		pathLayer.Clear();
 		currentReachableTiles.Clear();
-		
-		takeTurn();
+
+		if (onMoveComplete != null)
+			onMoveComplete();
+		else
+			takeTurn();
 	};
 }
 
@@ -654,25 +738,5 @@ private Vector2 TileIndexToWorldPos(int index)
 	
 	// Return absolute world position (adding the WorldMap's own position)
 	return GlobalPosition + new Vector2(x, y);
-}
-public int GetClosestPlayerIndex(int enemyMapIndex)
-{
-	int closestIndex = -1;
-	float minDistance = float.MaxValue;
-
-	foreach (GridEntity entity in allEntitys)
-	{
-		// Only target entities marked as players
-		if (entity.IsPlayer) 
-		{
-			float dist = allTiles[enemyMapIndex].tilePos.DistanceTo(allTiles[entity.mapindex].tilePos);
-			if (dist < minDistance)
-			{
-				minDistance = dist;
-				closestIndex = entity.mapindex;
-			}
-		}
-	}
-	return closestIndex;
 }
 }
