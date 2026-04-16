@@ -163,8 +163,15 @@ private int lastHoveredIndex = -1;
 
 public override void _Process(double delta)
 {
+	// Only allow movement preview and click input on player turns.
+	if (isMoving || firstEntityInTheTimeline == null || !firstEntityInTheTimeline.IsPlayer)
+	{
+		pathLayer.Clear();
+		lastHoveredIndex = -1;
+		return;
+	}
+
 	// 1. Get Mouse Position relative to the TileMap
-	if (isMoving) return;
 	Vector2 mousePos = worldMap.GetLocalMousePosition();
 	Vector2I gridPos = worldMap.LocalToMap(mousePos);
 	
@@ -199,7 +206,6 @@ public override void _Process(double delta)
 		{
 			MoveEntity(firstEntityInTheTimeline, hoverIndex);
 		}
-		GD.Print("this was clicked");
 	}
 }
 public void HighlightPath(List<int> path)
@@ -503,26 +509,29 @@ public async void takeTurn() // Mark as async to allow a small delay for "thinki
 	updateTimeline();
 	GridEntity activeUnit = firstEntityInTheTimeline;
 
-	// 1. Calculate Reachable Tiles (for highlighting or AI constraints)
-	currentReachableTiles = GetReachableTiles(activeUnit.mapindex, activeUnit.MovementRange);
-
 	if (activeUnit.IsPlayer)
 	{
+		// 1. Calculate player reachable tiles for UI and input.
+		currentReachableTiles = GetReachableTiles(activeUnit.mapindex, activeUnit.MovementRange);
+
 		// Player's turn: Just highlight and wait for input in _Process
 		HighlightReachableTiles(currentReachableTiles);
 	}
 	else
 	{
 		// Enemy's turn: AI Logic
-		HighlightReachableTiles(currentReachableTiles);
+		currentReachableTiles.Clear();
+		highlightLayer.Clear();
+		pathLayer.Clear();
+		List<int> enemyReachableTiles = GetReachableTiles(activeUnit.mapindex, activeUnit.MovementRange);
 		
 		// Small delay so the player can see who is moving
 		await ToSignal(GetTree().CreateTimer(0.5), "timeout");
 
-		PerformEnemyAI(activeUnit);
+		PerformEnemyAI(activeUnit, enemyReachableTiles);
 	}
 }
-public void PerformEnemyAI(GridEntity enemy)
+public void PerformEnemyAI(GridEntity enemy, List<int> enemyReachableTiles)
 {
 	int targetPlayerIndex = GetClosestPlayerIndex(enemy.mapindex);
 	if (targetPlayerIndex == -1) return; // No players left!
@@ -532,7 +541,7 @@ public void PerformEnemyAI(GridEntity enemy)
 	float closestDistToPlayer = float.MaxValue;
 
 	// Loop through all tiles the enemy CAN reach this turn
-	foreach (int tileIndex in currentReachableTiles)
+	foreach (int tileIndex in enemyReachableTiles)
 	{
 		// We want the tile that is closest to the player's coordinate
 		float dist = allTiles[tileIndex].tilePos.DistanceTo(playerPos);
