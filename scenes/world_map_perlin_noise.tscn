@@ -4,6 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://c31w46k2o6ukp" path="res://scenes/player_fighter.tscn" id="2_e70fe"]
 [ext_resource type="PackedScene" uid="uid://dahugjxcekk2x" path="res://scenes/enemy_fighter.tscn" id="3_xcgaf"]
 [ext_resource type="TileSet" uid="uid://xqiptqu7qhy7" path="res://assets/world_tile_set.tres" id="4_xcgaf"]
+[ext_resource type="PackedScene" path="res://scenes/timeline_overlay.tscn" id="5_timeline"]
 
 [node name="WorldMapPerlinNoise" type="Node2D" unique_id=782992415]
 script = ExtResource("1_t1o5u")
@@ -30,3 +31,6 @@ tile_set = ExtResource("4_xcgaf")
 unique_name_in_owner = true
 modulate = Color(1, 0, 1, 0.5137255)
 tile_set = ExtResource("4_xcgaf")
+
+[node name="TimelineOverlay" parent="." instance=ExtResource("5_timeline")]
+unique_name_in_owner = true
