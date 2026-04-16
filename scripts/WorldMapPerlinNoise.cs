@@ -432,17 +432,78 @@ public void HighlightReachableTiles(List<int> reachableIndices)
         highlightLayer.SetCell(gridPos, 0, highlightAtlasCoord);
     }
 }
-public void takeTurn()
+// public void takeTurn()
+// {
+//     updateTimeline();
+
+//     GridEntity activeUnit = firstEntityInTheTimeline;
+
+//     // FIX: Assign the result to the class-level variable
+//     currentReachableTiles = GetReachableTiles(activeUnit.mapindex, activeUnit.MovementRange);
+
+//     HighlightReachableTiles(currentReachableTiles);
+// }
+
+public async void takeTurn() // Mark as async to allow a small delay for "thinking"
 {
     updateTimeline();
-
     GridEntity activeUnit = firstEntityInTheTimeline;
 
-    // FIX: Assign the result to the class-level variable
+    // 1. Calculate Reachable Tiles (for highlighting or AI constraints)
     currentReachableTiles = GetReachableTiles(activeUnit.mapindex, activeUnit.MovementRange);
 
-    HighlightReachableTiles(currentReachableTiles);
+    if (activeUnit.IsPlayer)
+    {
+        // Player's turn: Just highlight and wait for input in _Process
+        HighlightReachableTiles(currentReachableTiles);
+    }
+    else
+    {
+        // Enemy's turn: AI Logic
+        HighlightReachableTiles(currentReachableTiles);
+        
+        // Small delay so the player can see who is moving
+        await ToSignal(GetTree().CreateTimer(0.5), "timeout");
+
+        PerformEnemyAI(activeUnit);
+    }
 }
+public void PerformEnemyAI(GridEntity enemy)
+{
+    int targetPlayerIndex = GetClosestPlayerIndex(enemy.mapindex);
+    if (targetPlayerIndex == -1) return; // No players left!
+
+    Vector2I playerPos = allTiles[targetPlayerIndex].tilePos;
+    int bestTileIndex = enemy.mapindex;
+    float closestDistToPlayer = float.MaxValue;
+
+    // Loop through all tiles the enemy CAN reach this turn
+    foreach (int tileIndex in currentReachableTiles)
+    {
+        // We want the tile that is closest to the player's coordinate
+        float dist = allTiles[tileIndex].tilePos.DistanceTo(playerPos);
+        
+        // Optional: If you want them to stop 1 tile away (attack range),
+        // you can add logic here to prefer a distance of 1.0.
+
+
+		if (Mathf.Abs(dist - enemy.AttackRange) < 0.1f) 
+		{
+			bestTileIndex = tileIndex;
+			break; // Found an attack spot!
+		}
+
+        if (dist < closestDistToPlayer)
+        {
+            closestDistToPlayer = dist;
+            bestTileIndex = tileIndex;
+        }
+    }
+
+    // Move to the best calculated tile
+    MoveEntity(enemy, bestTileIndex);
+}
+
 public List<int> GetPathToTarget(int targetIndex, int startIndex)
 {
     List<int> path = new List<int>();
@@ -530,5 +591,25 @@ private Vector2 TileIndexToWorldPos(int index)
     
     // Return absolute world position (adding the WorldMap's own position)
     return GlobalPosition + new Vector2(x, y);
+}
+public int GetClosestPlayerIndex(int enemyMapIndex)
+{
+    int closestIndex = -1;
+    float minDistance = float.MaxValue;
+
+    foreach (GridEntity entity in allEntitys)
+    {
+        // Only target entities marked as players
+        if (entity.IsPlayer) 
+        {
+            float dist = allTiles[enemyMapIndex].tilePos.DistanceTo(allTiles[entity.mapindex].tilePos);
+            if (dist < minDistance)
+            {
+                minDistance = dist;
+                closestIndex = entity.mapindex;
+            }
+        }
+    }
+    return closestIndex;
 }
 }

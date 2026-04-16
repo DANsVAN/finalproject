@@ -3,7 +3,7 @@ using System;
 
 public partial class PlayerFighter : GridEntity 
 {	
-	public PlayerFighter() : base(20,5,5,1,5)
+	public PlayerFighter() : base(20,5,5,1,5,true)
 	{
 	}
 	public override void _Ready()

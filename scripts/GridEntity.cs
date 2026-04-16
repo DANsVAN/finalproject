@@ -17,10 +17,11 @@ public partial class GridEntity : Node2D
 	public int mapindex;
 	public int spriteSize = 16;
 	public Node2D Node2DEntity;
+	public bool IsPlayer;
 
 
     // Constructor for the base class
-    public GridEntity(int health, int speed, int movementRange, int attackRange, int baseDamage) 
+    public GridEntity(int health, int speed, int movementRange, int attackRange, int baseDamage, bool isPlayer) 
     {
 		MovementRange = movementRange;
         MaxHealth = health;
@@ -29,6 +30,7 @@ public partial class GridEntity : Node2D
 		CurrentSpeed = speed;
 		AttackRange = attackRange;
 		BaseDamage = baseDamage;
+		IsPlayer = isPlayer;
         GD.Print("GridEntity constructor called!");
     }
     public virtual void TakeDamage(int amount) 
