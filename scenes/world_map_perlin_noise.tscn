@@ -7,10 +7,13 @@
 
 [node name="WorldMapPerlinNoise" type="Node2D" unique_id=782992415]
 script = ExtResource("1_t1o5u")
-mapWidthInTiles = 75
-snowThreshold = 0.55
-iceThreshold = 0.62
-mountainThreshold = 0.63
+noiseScale = 100.0
+grassThreshold = 0.6
+waterThreshold = 0.4
+snowThreshold = 0.68
+iceThreshold = 0.71
+mountainThreshold = 0.8
+worldFractalOctaves = 5
 EntityPlayerFighter = ExtResource("2_e70fe")
 EntityEnemyFighter = ExtResource("3_xcgaf")
 

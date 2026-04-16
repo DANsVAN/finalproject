@@ -9,11 +9,11 @@ public partial class WorldMapPerlinNoise : Node2D
 	[Export] int mapHightInTiles = 25;
 	[Export] int tileSizeInpixels = 16;
 	[Export] double noiseScale = 0.002;
-	[Export] double grassThreshold = 0.51;
-	[Export] double waterThreshold = 0.65;
-	[Export] double snowThreshold = 0.7;
-	[Export] double iceThreshold = 0.75;
-	[Export] double mountainThreshold = 0.8;
+	[Export] double grassThreshold = 0.5;
+	[Export] double waterThreshold = 0.6;
+	[Export] double snowThreshold = 0.85;
+	[Export] double iceThreshold = 0.95;
+	[Export] double mountainThreshold = 0.1;
 	[Export] float worldNoiseScale = 0.02f;
 	[Export] int worldFractalOctaves = 4;
 	[Export] float worldFractalLacunarity = 2.0f;
@@ -118,41 +118,35 @@ public void generateMapFromNoise(FastNoiseLite noise)
 				allTiles[currentTileIndex].index = currentTileIndex;
 				allTiles[currentTileIndex].noiseValue = noiseValueOfTile;
 				allTiles[currentTileIndex].tilePos = tilePos;
-				if (noiseValueOfTile < grassThreshold)
+				if (noiseValueOfTile < waterThreshold) // 0.0 to 0.3
 				{
-					allTiles[currentTileIndex].atlasCoords.X = 0;
-					allTiles[currentTileIndex].atlasCoords.Y = 3;
-					allTiles[currentTileIndex].tileName = "grass";
-					allTiles[currentTileIndex].movementCost = 1;
-				}
-				else if (noiseValueOfTile < waterThreshold)
-				{
-					allTiles[currentTileIndex].atlasCoords.X = 3;
-					allTiles[currentTileIndex].atlasCoords.Y = 0;
+					allTiles[currentTileIndex].atlasCoords = new Vector2I(3, 0);
 					allTiles[currentTileIndex].tileName = "water";
 					allTiles[currentTileIndex].movementCost = 2;
 				}
-				else if (noiseValueOfTile < snowThreshold)
+				else if (noiseValueOfTile < grassThreshold) // 0.3 to 0.8 (Large Range = Lots of Grass)
 				{
-					allTiles[currentTileIndex].atlasCoords.X = 1;
-					allTiles[currentTileIndex].atlasCoords.Y = 0;
+					allTiles[currentTileIndex].atlasCoords = new Vector2I(0, 3);
+					allTiles[currentTileIndex].tileName = "grass";
+					allTiles[currentTileIndex].movementCost = 1;
+				}
+				else if (noiseValueOfTile < snowThreshold) // 0.8 to 0.9
+				{
+					allTiles[currentTileIndex].atlasCoords = new Vector2I(1, 0);
 					allTiles[currentTileIndex].tileName = "snow";
 					allTiles[currentTileIndex].movementCost = 3;
 				}
-					else if (noiseValueOfTile < iceThreshold)
+				else if (noiseValueOfTile < iceThreshold) // 0.9 to 0.95
 				{
-					allTiles[currentTileIndex].atlasCoords.X = 0;
-					allTiles[currentTileIndex].atlasCoords.Y = 1;
+					allTiles[currentTileIndex].atlasCoords = new Vector2I(0, 1);
 					allTiles[currentTileIndex].tileName = "ice";
-					allTiles[currentTileIndex].movementCost = 5;
+					allTiles[currentTileIndex].movementCost = 4;
 				}
-				else
+				else // 0.95 to 1.0 (Smallest Range = Rare Mountains)
 				{
-					//mountainThreshold
-					allTiles[currentTileIndex].atlasCoords.X = 0;
-					allTiles[currentTileIndex].atlasCoords.Y = 2;
+					allTiles[currentTileIndex].atlasCoords = new Vector2I(0, 2);
 					allTiles[currentTileIndex].tileName = "mountain";
-					allTiles[currentTileIndex].movementCost = 6;
+					allTiles[currentTileIndex].movementCost = 999999;
 				}
 				worldMap.SetCell(allTiles[currentTileIndex].tilePos,0,allTiles[currentTileIndex].atlasCoords);
 				currentTileIndex ++;
