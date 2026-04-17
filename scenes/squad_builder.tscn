@@ -1,0 +1,110 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/SquadBuilderController.cs" id="1_squad_builder"]
+
+[node name="SquadBuilder" type="CanvasLayer"]
+script = ExtResource("1_squad_builder")
+
+[node name="Root" type="MarginContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="VBox" type="VBoxContainer" parent="Root"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="Root/VBox"]
+layout_mode = 2
+text = "Build Your Squad (5 Units)"
+
+[node name="Help" type="Label" parent="Root/VBox"]
+layout_mode = 2
+text = "Choose a class for each slot. Play always starts here."
+
+[node name="Slots" type="VBoxContainer" parent="Root/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Slot1" type="HBoxContainer" parent="Root/VBox/Slots"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Label" type="Label" parent="Root/VBox/Slots/Slot1"]
+layout_mode = 2
+text = "Slot 1"
+
+[node name="ClassSelector" type="OptionButton" parent="Root/VBox/Slots/Slot1"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Slot2" type="HBoxContainer" parent="Root/VBox/Slots"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Label" type="Label" parent="Root/VBox/Slots/Slot2"]
+layout_mode = 2
+text = "Slot 2"
+
+[node name="ClassSelector" type="OptionButton" parent="Root/VBox/Slots/Slot2"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Slot3" type="HBoxContainer" parent="Root/VBox/Slots"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Label" type="Label" parent="Root/VBox/Slots/Slot3"]
+layout_mode = 2
+text = "Slot 3"
+
+[node name="ClassSelector" type="OptionButton" parent="Root/VBox/Slots/Slot3"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Slot4" type="HBoxContainer" parent="Root/VBox/Slots"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Label" type="Label" parent="Root/VBox/Slots/Slot4"]
+layout_mode = 2
+text = "Slot 4"
+
+[node name="ClassSelector" type="OptionButton" parent="Root/VBox/Slots/Slot4"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Slot5" type="HBoxContainer" parent="Root/VBox/Slots"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Label" type="Label" parent="Root/VBox/Slots/Slot5"]
+layout_mode = 2
+text = "Slot 5"
+
+[node name="ClassSelector" type="OptionButton" parent="Root/VBox/Slots/Slot5"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StatusLabel" type="Label" parent="Root/VBox"]
+layout_mode = 2
+text = ""
+
+[node name="Buttons" type="HBoxContainer" parent="Root/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="StartBattleButton" type="Button" parent="Root/VBox/Buttons"]
+layout_mode = 2
+text = "Start Battle"
+
+[node name="BackButton" type="Button" parent="Root/VBox/Buttons"]
+layout_mode = 2
+text = "Back"
+
+[connection signal="pressed" from="Root/VBox/Buttons/StartBattleButton" to="." method="_on_start_battle_pressed"]
+[connection signal="pressed" from="Root/VBox/Buttons/BackButton" to="." method="_on_back_pressed"]

@@ -28,6 +28,10 @@ public partial class GridEntity : Node2D
 		RefreshHealthBar();
 	}
 
+	public GridEntity()
+	{
+	}
+
     // Constructor for the base class
     public GridEntity(int health, int speed, int movementRange, int attackRange, int baseDamage, bool isPlayer) 
     {
@@ -41,6 +45,31 @@ public partial class GridEntity : Node2D
 		IsPlayer = isPlayer;
         GD.Print("GridEntity constructor called!");
     }
+
+	public void ApplyCharacterClass(CharacterClass classDef, bool isPlayer)
+	{
+		if (classDef == null) return;
+
+		MovementRange = classDef.MovementRange;
+		MaxHealth = classDef.MaxHealth;
+		CurrentHealth = classDef.MaxHealth;
+		BaseSpeed = classDef.BaseSpeed;
+		CurrentSpeed = classDef.BaseSpeed;
+		AttackRange = classDef.AttackRange;
+		BaseDamage = classDef.BaseDamage;
+		IsPlayer = isPlayer;
+
+		Sprite2D spriteNode = sprite ?? GetNodeOrNull<Sprite2D>("Sprite2D");
+		if (spriteNode != null)
+		{
+			spriteNode.Texture = classDef.SpriteTexture;
+			spriteNode.Hframes = Math.Max(1, classDef.SpriteHFrames);
+			spriteNode.Frame = 0;
+			sprite = spriteNode;
+		}
+
+		RefreshHealthBar();
+	}
 
 	// Sets up the health bar nodes
 	private void CacheHealthBarNodes()

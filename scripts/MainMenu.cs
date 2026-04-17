@@ -14,8 +14,7 @@ public partial class MainMenu : CanvasLayer
 
 	public void _on_play_btn_pressed()
 	{
-
-		secneFilePath = "res://scenes/game_world.tscn";
+		secneFilePath = "res://scenes/squad_builder.tscn";
 		this.FollowViewportEnabled = true;
 		gameManger.ChangeChildScene(secneFilePath);
 	}

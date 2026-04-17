@@ -137,12 +137,13 @@ public partial class WorldMapPerlinNoise : Node2D
 		bool player = true;
 		makeMap();
 		generateNeighborsOfTiles();
-		SpawnEntity(EntityPlayerFighter,GD.RandRange(mapStart, mapMiddle),player);
-		SpawnEntity(EntityPlayerFighter,GD.RandRange(mapStart, mapMiddle),player);
-		SpawnEntity(EntityPlayerFighter,GD.RandRange(mapStart, mapMiddle),player);
-		SpawnEntity(EntityPlayerFighter,GD.RandRange(mapStart, mapMiddle),player);
-		SpawnEntity(EntityPlayerFighter,GD.RandRange(mapStart, mapMiddle),player);
-		SpawnEntity(EntityPlayerFighter,GD.RandRange(mapStart, mapMiddle),player);
+
+		List<CharacterClass> selectedSquad = SquadSelectionState.GetSelectedOrDefaultSquad();
+		for (int i = 0; i < selectedSquad.Count; i++)
+		{
+			SpawnEntity(EntityPlayerFighter, GD.RandRange(mapStart, mapMiddle), player, selectedSquad[i]);
+		}
+
 		SpawnEntity(EntityEnemyFighter,GD.RandRange(mapMiddle + 1, mapEnd),enemy);
 		SpawnEntity(EntityEnemyFighter,GD.RandRange(mapMiddle + 1, mapEnd),enemy);
 		SpawnEntity(EntityEnemyFighter,GD.RandRange(mapMiddle + 1, mapEnd),enemy);
@@ -384,7 +385,7 @@ public void generateNeighborsOfTiles()
 	}
 }
 
-public void SpawnEntity(PackedScene PackedEntityScene, int mapIndex,bool player)
+public void SpawnEntity(PackedScene PackedEntityScene, int mapIndex, bool player, CharacterClass playerClass = null)
 {
 	// 1. Safety Check: If index is out of bounds, wrap it
 	int index = mapIndex % allTiles.Length;
@@ -397,11 +398,11 @@ public void SpawnEntity(PackedScene PackedEntityScene, int mapIndex,bool player)
 	{
 			if (player)
 			{
-					SpawnEntity(EntityPlayerFighter,GD.RandRange(mapStart, mapMiddle),player);
+					SpawnEntity(EntityPlayerFighter, GD.RandRange(mapStart, mapMiddle), player, playerClass);
 			}
 			else
 			{
-					SpawnEntity(EntityEnemyFighter,GD.RandRange(mapMiddle + 1, mapEnd),player);
+					SpawnEntity(EntityEnemyFighter, GD.RandRange(mapMiddle + 1, mapEnd), player);
 			}
 		return; 
 	}
@@ -419,6 +420,18 @@ public void SpawnEntity(PackedScene PackedEntityScene, int mapIndex,bool player)
 		
 		// Ensure sprite reference is set (since _Ready might not have fired yet)
 		gridEntity.sprite = entityNode.GetNode<Sprite2D>("Sprite2D");
+		if (player)
+		{
+			CharacterClass classDef = playerClass;
+			if (classDef != null)
+				gridEntity.ApplyCharacterClass(classDef, true);
+			else
+				gridEntity.IsPlayer = true;
+		}
+		else
+		{
+			gridEntity.IsPlayer = false;
+		}
 	}
 }
 

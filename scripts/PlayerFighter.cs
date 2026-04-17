@@ -10,5 +10,6 @@ public partial class PlayerFighter : GridEntity
     {
 		base._Ready();
         sprite = GetNode<Sprite2D>("Sprite2D");
+		IsPlayer = true;
     }
 }
