@@ -12,4 +12,5 @@ public partial class CharacterClass : Resource
 	[Export] public int MovementRange = 5;
 	[Export] public int AttackRange = 1;
 	[Export] public int BaseDamage = 5;
+	[Export(PropertyHint.MultilineText)] public string Description = "";
 }

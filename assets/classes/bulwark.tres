@@ -14,3 +14,4 @@ BaseSpeed = 3
 MovementRange = 4
 AttackRange = 1
 BaseDamage = 4
+Description = "A heavy defender built to absorb pressure and hold contested spaces."

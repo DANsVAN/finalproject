@@ -9,102 +9,229 @@ script = ExtResource("1_squad_builder")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 24
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 24
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
 
-[node name="VBox" type="VBoxContainer" parent="Root"]
+[node name="MainVBox" type="VBoxContainer" parent="Root"]
 layout_mode = 2
-theme_override_constants/separation = 10
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 12
 
-[node name="Title" type="Label" parent="Root/VBox"]
+[node name="ColumnsRow" type="HBoxContainer" parent="Root/MainVBox"]
 layout_mode = 2
-text = "Build Your Squad (5 Units)"
+size_flags_vertical = 3
+theme_override_constants/separation = 8
 
-[node name="Help" type="Label" parent="Root/VBox"]
+[node name="Column1" type="VBoxContainer" parent="Root/MainVBox/ColumnsRow"]
 layout_mode = 2
-text = "Choose a class for each slot. Play always starts here."
+size_flags_horizontal = 3
 
-[node name="Slots" type="VBoxContainer" parent="Root/VBox"]
+[node name="ClassSelector" type="OptionButton" parent="Root/MainVBox/ColumnsRow/Column1"]
+layout_mode = 2
+
+[node name="CardPanel" type="PanelContainer" parent="Root/MainVBox/ColumnsRow/Column1"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CardPad" type="MarginContainer" parent="Root/MainVBox/ColumnsRow/Column1/CardPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="CardVBox" type="VBoxContainer" parent="Root/MainVBox/ColumnsRow/Column1/CardPanel/CardPad"]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="Slot1" type="HBoxContainer" parent="Root/VBox/Slots"]
+[node name="CardSprite" type="TextureRect" parent="Root/MainVBox/ColumnsRow/Column1/CardPanel/CardPad/CardVBox"]
+custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
-theme_override_constants/separation = 8
+size_flags_vertical = 3
+expand_mode = 1
+stretch_mode = 5
 
-[node name="Label" type="Label" parent="Root/VBox/Slots/Slot1"]
+[node name="CardStats" type="Label" parent="Root/MainVBox/ColumnsRow/Column1/CardPanel/CardPad/CardVBox"]
 layout_mode = 2
-text = "Slot 1"
+autowrap_mode = 2
 
-[node name="ClassSelector" type="OptionButton" parent="Root/VBox/Slots/Slot1"]
+[node name="CardDesc" type="Label" parent="Root/MainVBox/ColumnsRow/Column1/CardPanel/CardPad/CardVBox"]
 layout_mode = 2
-size_flags_horizontal = 3
+size_flags_vertical = 3
+autowrap_mode = 2
 
-[node name="Slot2" type="HBoxContainer" parent="Root/VBox/Slots"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="Label" type="Label" parent="Root/VBox/Slots/Slot2"]
-layout_mode = 2
-text = "Slot 2"
-
-[node name="ClassSelector" type="OptionButton" parent="Root/VBox/Slots/Slot2"]
+[node name="Column2" type="VBoxContainer" parent="Root/MainVBox/ColumnsRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Slot3" type="HBoxContainer" parent="Root/VBox/Slots"]
+[node name="ClassSelector" type="OptionButton" parent="Root/MainVBox/ColumnsRow/Column2"]
 layout_mode = 2
-theme_override_constants/separation = 8
 
-[node name="Label" type="Label" parent="Root/VBox/Slots/Slot3"]
+[node name="CardPanel" type="PanelContainer" parent="Root/MainVBox/ColumnsRow/Column2"]
 layout_mode = 2
-text = "Slot 3"
+size_flags_vertical = 3
 
-[node name="ClassSelector" type="OptionButton" parent="Root/VBox/Slots/Slot3"]
+[node name="CardPad" type="MarginContainer" parent="Root/MainVBox/ColumnsRow/Column2/CardPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="CardVBox" type="VBoxContainer" parent="Root/MainVBox/ColumnsRow/Column2/CardPanel/CardPad"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CardSprite" type="TextureRect" parent="Root/MainVBox/ColumnsRow/Column2/CardPanel/CardPad/CardVBox"]
+custom_minimum_size = Vector2(0, 96)
+layout_mode = 2
+size_flags_vertical = 3
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CardStats" type="Label" parent="Root/MainVBox/ColumnsRow/Column2/CardPanel/CardPad/CardVBox"]
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="CardDesc" type="Label" parent="Root/MainVBox/ColumnsRow/Column2/CardPanel/CardPad/CardVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+autowrap_mode = 2
+
+[node name="Column3" type="VBoxContainer" parent="Root/MainVBox/ColumnsRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Slot4" type="HBoxContainer" parent="Root/VBox/Slots"]
+[node name="ClassSelector" type="OptionButton" parent="Root/MainVBox/ColumnsRow/Column3"]
 layout_mode = 2
-theme_override_constants/separation = 8
 
-[node name="Label" type="Label" parent="Root/VBox/Slots/Slot4"]
+[node name="CardPanel" type="PanelContainer" parent="Root/MainVBox/ColumnsRow/Column3"]
 layout_mode = 2
-text = "Slot 4"
+size_flags_vertical = 3
 
-[node name="ClassSelector" type="OptionButton" parent="Root/VBox/Slots/Slot4"]
+[node name="CardPad" type="MarginContainer" parent="Root/MainVBox/ColumnsRow/Column3/CardPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="CardVBox" type="VBoxContainer" parent="Root/MainVBox/ColumnsRow/Column3/CardPanel/CardPad"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CardSprite" type="TextureRect" parent="Root/MainVBox/ColumnsRow/Column3/CardPanel/CardPad/CardVBox"]
+custom_minimum_size = Vector2(0, 96)
+layout_mode = 2
+size_flags_vertical = 3
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CardStats" type="Label" parent="Root/MainVBox/ColumnsRow/Column3/CardPanel/CardPad/CardVBox"]
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="CardDesc" type="Label" parent="Root/MainVBox/ColumnsRow/Column3/CardPanel/CardPad/CardVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+autowrap_mode = 2
+
+[node name="Column4" type="VBoxContainer" parent="Root/MainVBox/ColumnsRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Slot5" type="HBoxContainer" parent="Root/VBox/Slots"]
+[node name="ClassSelector" type="OptionButton" parent="Root/MainVBox/ColumnsRow/Column4"]
 layout_mode = 2
-theme_override_constants/separation = 8
 
-[node name="Label" type="Label" parent="Root/VBox/Slots/Slot5"]
+[node name="CardPanel" type="PanelContainer" parent="Root/MainVBox/ColumnsRow/Column4"]
 layout_mode = 2
-text = "Slot 5"
+size_flags_vertical = 3
 
-[node name="ClassSelector" type="OptionButton" parent="Root/VBox/Slots/Slot5"]
+[node name="CardPad" type="MarginContainer" parent="Root/MainVBox/ColumnsRow/Column4/CardPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="CardVBox" type="VBoxContainer" parent="Root/MainVBox/ColumnsRow/Column4/CardPanel/CardPad"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CardSprite" type="TextureRect" parent="Root/MainVBox/ColumnsRow/Column4/CardPanel/CardPad/CardVBox"]
+custom_minimum_size = Vector2(0, 96)
+layout_mode = 2
+size_flags_vertical = 3
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CardStats" type="Label" parent="Root/MainVBox/ColumnsRow/Column4/CardPanel/CardPad/CardVBox"]
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="CardDesc" type="Label" parent="Root/MainVBox/ColumnsRow/Column4/CardPanel/CardPad/CardVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+autowrap_mode = 2
+
+[node name="Column5" type="VBoxContainer" parent="Root/MainVBox/ColumnsRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="StatusLabel" type="Label" parent="Root/VBox"]
+[node name="ClassSelector" type="OptionButton" parent="Root/MainVBox/ColumnsRow/Column5"]
 layout_mode = 2
-text = ""
 
-[node name="Buttons" type="HBoxContainer" parent="Root/VBox"]
+[node name="CardPanel" type="PanelContainer" parent="Root/MainVBox/ColumnsRow/Column5"]
 layout_mode = 2
-theme_override_constants/separation = 8
+size_flags_vertical = 3
 
-[node name="StartBattleButton" type="Button" parent="Root/VBox/Buttons"]
+[node name="CardPad" type="MarginContainer" parent="Root/MainVBox/ColumnsRow/Column5/CardPanel"]
 layout_mode = 2
-text = "Start Battle"
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
 
-[node name="BackButton" type="Button" parent="Root/VBox/Buttons"]
+[node name="CardVBox" type="VBoxContainer" parent="Root/MainVBox/ColumnsRow/Column5/CardPanel/CardPad"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CardSprite" type="TextureRect" parent="Root/MainVBox/ColumnsRow/Column5/CardPanel/CardPad/CardVBox"]
+custom_minimum_size = Vector2(0, 96)
+layout_mode = 2
+size_flags_vertical = 3
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CardStats" type="Label" parent="Root/MainVBox/ColumnsRow/Column5/CardPanel/CardPad/CardVBox"]
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="CardDesc" type="Label" parent="Root/MainVBox/ColumnsRow/Column5/CardPanel/CardPad/CardVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+autowrap_mode = 2
+
+[node name="BottomRow" type="HBoxContainer" parent="Root/MainVBox"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="BackButton" type="Button" parent="Root/MainVBox/BottomRow"]
 layout_mode = 2
 text = "Back"
 
-[connection signal="pressed" from="Root/VBox/Buttons/StartBattleButton" to="." method="_on_start_battle_pressed"]
-[connection signal="pressed" from="Root/VBox/Buttons/BackButton" to="." method="_on_back_pressed"]
+[node name="ButtonSpacer" type="Control" parent="Root/MainVBox/BottomRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StartBattleButton" type="Button" parent="Root/MainVBox/BottomRow"]
+layout_mode = 2
+text = "Start"
+
+[connection signal="pressed" from="Root/MainVBox/BottomRow/BackButton" to="." method="_on_back_pressed"]
+[connection signal="pressed" from="Root/MainVBox/BottomRow/StartBattleButton" to="." method="_on_start_battle_pressed"]

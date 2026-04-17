@@ -14,3 +14,4 @@ BaseSpeed = 7
 MovementRange = 6
 AttackRange = 1
 BaseDamage = 5
+Description = "A mobile striker that trades toughness for speed and map control."

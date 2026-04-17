@@ -14,3 +14,4 @@ BaseSpeed = 4
 MovementRange = 5
 AttackRange = 1
 BaseDamage = 7
+Description = "A front-line bruiser with high damage and durable health for direct engagements."

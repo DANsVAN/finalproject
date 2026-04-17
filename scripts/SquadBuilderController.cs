@@ -1,4 +1,5 @@
 using Godot;
+using System;
 using System.Collections.Generic;
 
 public partial class SquadBuilderController : CanvasLayer
@@ -7,20 +8,35 @@ public partial class SquadBuilderController : CanvasLayer
 	private const string MainMenuScenePath = "res://scenes/main_menu.tscn";
 
 	private readonly List<OptionButton> _slotSelectors = new List<OptionButton>();
+	private readonly List<TextureRect> _cardSprites = new List<TextureRect>();
+	private readonly List<Label> _cardStats = new List<Label>();
+	private readonly List<Label> _cardDescs = new List<Label>();
+
 	private readonly List<CharacterClass> _availableClasses = new List<CharacterClass>();
-	private Label _statusLabel;
 	private GameManager _gameManager;
 
 	public override void _Ready()
 	{
 		_gameManager = GetParent() as GameManager;
-		_statusLabel = GetNode<Label>("Root/VBox/StatusLabel");
 
 		_slotSelectors.Clear();
+		_cardSprites.Clear();
+		_cardStats.Clear();
+		_cardDescs.Clear();
+
 		for (int slot = 0; slot < SquadSelectionState.SquadSize; slot++)
 		{
-			OptionButton selector = GetNode<OptionButton>($"Root/VBox/Slots/Slot{slot + 1}/ClassSelector");
+			int n = slot + 1;
+			OptionButton selector = GetNode<OptionButton>($"Root/MainVBox/ColumnsRow/Column{n}/ClassSelector");
+			int capturedSlot = slot;
+			selector.ItemSelected += _ => OnSlotSelectionChanged(capturedSlot);
 			_slotSelectors.Add(selector);
+
+			TextureRect cardSprite = GetNode<TextureRect>($"Root/MainVBox/ColumnsRow/Column{n}/CardPanel/CardPad/CardVBox/CardSprite");
+			cardSprite.TextureFilter = CanvasItem.TextureFilterEnum.Nearest;
+			_cardSprites.Add(cardSprite);
+			_cardStats.Add(GetNode<Label>($"Root/MainVBox/ColumnsRow/Column{n}/CardPanel/CardPad/CardVBox/CardStats"));
+			_cardDescs.Add(GetNode<Label>($"Root/MainVBox/ColumnsRow/Column{n}/CardPanel/CardPad/CardVBox/CardDesc"));
 		}
 
 		IReadOnlyList<CharacterClass> classes = SquadSelectionState.GetAvailableClasses();
@@ -30,7 +46,8 @@ public partial class SquadBuilderController : CanvasLayer
 
 		PopulateSelectors();
 		ApplyCurrentOrDefaultSelection();
-		UpdateStatus("Select your 5-unit squad, then start battle.");
+		for (int i = 0; i < SquadSelectionState.SquadSize; i++)
+			RefreshCard(i);
 	}
 
 	private void PopulateSelectors()
@@ -64,23 +81,79 @@ public partial class SquadBuilderController : CanvasLayer
 		}
 	}
 
+	private void OnSlotSelectionChanged(int slotIndex)
+	{
+		RefreshCard(Mathf.Clamp(slotIndex, 0, _slotSelectors.Count - 1));
+	}
+
+	private void RefreshCard(int slotIndex)
+	{
+		if (slotIndex < 0 || slotIndex >= _slotSelectors.Count)
+			return;
+
+		if (_availableClasses.Count == 0)
+		{
+			RenderCard(slotIndex, null);
+			return;
+		}
+
+		int selectedIndex = _slotSelectors[slotIndex].Selected;
+		if (selectedIndex < 0 || selectedIndex >= _availableClasses.Count)
+			selectedIndex = 0;
+
+		RenderCard(slotIndex, _availableClasses[selectedIndex]);
+	}
+
+	private void RenderCard(int slotIndex, CharacterClass classDef)
+	{
+		TextureRect spriteRect = _cardSprites[slotIndex];
+		Label statsLabel = _cardStats[slotIndex];
+		Label descLabel = _cardDescs[slotIndex];
+
+		if (classDef == null)
+		{
+			spriteRect.Texture = null;
+			statsLabel.Text = "";
+			descLabel.Text = "";
+			return;
+		}
+
+		spriteRect.Texture = BuildFrame0Atlas(classDef);
+		statsLabel.Text =
+			$"HP {classDef.MaxHealth}\n" +
+			$"Spd {classDef.BaseSpeed}\n" +
+			$"Mv {classDef.MovementRange}\n" +
+			$"Rng {classDef.AttackRange}\n" +
+			$"Dmg {classDef.BaseDamage}";
+		descLabel.Text = string.IsNullOrWhiteSpace(classDef.Description) ? "" : classDef.Description;
+	}
+
+	private static Texture2D BuildFrame0Atlas(CharacterClass classDef)
+	{
+		if (classDef?.SpriteTexture == null)
+			return null;
+
+		Vector2 size = classDef.SpriteTexture.GetSize();
+		int hframes = Math.Max(1, classDef.SpriteHFrames);
+		float frameW = size.X / hframes;
+
+		AtlasTexture atlas = new AtlasTexture();
+		atlas.Atlas = classDef.SpriteTexture;
+		atlas.Region = new Rect2(0, 0, frameW, size.Y);
+		return atlas;
+	}
+
 	public void _on_start_battle_pressed()
 	{
 		if (_availableClasses.Count == 0)
-		{
-			UpdateStatus("No classes found. Add class resources first.");
 			return;
-		}
 
 		List<CharacterClass> squad = new List<CharacterClass>();
 		for (int i = 0; i < _slotSelectors.Count; i++)
 		{
 			int selectedIndex = _slotSelectors[i].Selected;
 			if (selectedIndex < 0 || selectedIndex >= _availableClasses.Count)
-			{
-				UpdateStatus("Each slot must have a valid class selected.");
 				return;
-			}
 
 			squad.Add(_availableClasses[selectedIndex]);
 		}
@@ -92,11 +165,5 @@ public partial class SquadBuilderController : CanvasLayer
 	public void _on_back_pressed()
 	{
 		_gameManager?.ChangeChildScene(MainMenuScenePath);
-	}
-
-	private void UpdateStatus(string message)
-	{
-		if (_statusLabel != null)
-			_statusLabel.Text = message;
 	}
 }
