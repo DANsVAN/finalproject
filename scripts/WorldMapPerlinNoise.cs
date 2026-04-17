@@ -44,7 +44,7 @@ public partial class WorldMapPerlinNoise : Node2D
 	// Change to adjust attack stats
 	private static readonly PlayerAttackDefinition[] PlayerAttacks =
 	{
-		new PlayerAttackDefinition("Strike", AttackPatternKind.Single, maxRange: 2, damage: 8),
+		new PlayerAttackDefinition("Strike", AttackPatternKind.Single, maxRange: 1, damage: 8),
 		new PlayerAttackDefinition("Line", AttackPatternKind.Line, maxRange: 4, damage: 5, lineLength: 4),
 		new PlayerAttackDefinition("Blast", AttackPatternKind.AoeRadius, maxRange: 3, damage: 3, aoeRadius: 1),
 	};
@@ -272,7 +272,7 @@ public override void _Process(double delta)
 	else if (_playerMode == PlayerTurnMode.Attack && _selectedAttackIndex >= 0 && _selectedAttackIndex < PlayerAttacks.Length)
 	{
 		PlayerAttackDefinition attack = PlayerAttacks[_selectedAttackIndex];
-		List<int> attackReach = GetTilesWithinStepRange(firstEntityInTheTimeline.mapindex, attack.MaxRange);
+		List<int> attackReach = GetTilesWithinAttackRange(firstEntityInTheTimeline.mapindex, attack.MaxRange);
 
 		if (hoverIndex != _lastAttackHoverIndex)
 		{
@@ -601,7 +601,7 @@ private void OnPlayerAttackSelected(int attackIndex)
 	_lastAttackHoverIndex = -1;
 
 	PlayerAttackDefinition selectedAttack = PlayerAttacks[attackIndex];
-	List<int> attackReach = GetTilesWithinStepRange(firstEntityInTheTimeline.mapindex, selectedAttack.MaxRange);
+	List<int> attackReach = GetTilesWithinAttackRange(firstEntityInTheTimeline.mapindex, selectedAttack.MaxRange);
 	DrawAttackReachTiles(attackReach);
 
 	RefreshPlayerMovementHighlights();
@@ -674,7 +674,7 @@ private void OnPlayerMoveFinished()
 		if (_playerMode == PlayerTurnMode.Attack && _selectedAttackIndex >= 0 && _selectedAttackIndex < PlayerAttacks.Length && !_playerHasAttackedThisTurn)
 		{
 			PlayerAttackDefinition attack = PlayerAttacks[_selectedAttackIndex];
-			List<int> attackReach = GetTilesWithinStepRange(firstEntityInTheTimeline.mapindex, attack.MaxRange);
+			List<int> attackReach = GetTilesWithinAttackRange(firstEntityInTheTimeline.mapindex, attack.MaxRange);
 			DrawAttackReachTiles(attackReach);
 
 			if (_lastAttackHoverIndex >= 0 && attackReach.Contains(_lastAttackHoverIndex))
@@ -690,6 +690,13 @@ private void OnPlayerMoveFinished()
 private void RefreshPlayerMovementHighlights()
 {
 	if (!IsPlayerUnit(firstEntityInTheTimeline)) return;
+
+	if (_playerMode == PlayerTurnMode.Attack)
+	{
+		highlightLayer.Clear();
+		currentReachableTiles.Clear();
+		return;
+	}
 
 	if (_playerHasMovedThisTurn)
 	{
@@ -726,9 +733,9 @@ private int GetManhattanTileDistance(int indexA, int indexB)
 	return Math.Abs(a.X - b.X) + Math.Abs(a.Y - b.Y);
 }
 
-// Gets the tiles within a step range of the starting tile
-// The step range is the maximum number of tiles that the entity can move in a single turn
-private List<int> GetTilesWithinStepRange(int startIndex, int maxSteps)
+// Attack targeting range: each orthogonal step costs 1 (terrain movementCost is ignored).
+// Mountains remain impassable for targeting, matching movement blocking.
+private List<int> GetTilesWithinAttackRange(int startIndex, int maxSteps)
 {
 	Dictionary<int, int> costSoFar = new Dictionary<int, int>();
 	PriorityQueue<int, int> frontier = new PriorityQueue<int, int>();
@@ -746,8 +753,8 @@ private List<int> GetTilesWithinStepRange(int startIndex, int maxSteps)
 			if (allTiles[next].tileName == "mountain")
 				continue;
 
-			int costToMove = allTiles[next].movementCost > 0 ? allTiles[next].movementCost : 1;
-			int newCost = costSoFar[current] + costToMove;
+			const int stepCost = 1;
+			int newCost = costSoFar[current] + stepCost;
 
 			if (newCost <= maxSteps)
 			{
@@ -798,7 +805,7 @@ private List<int> BuildAttackPatternTiles(GridEntity attacker, int originIndex, 
 			break;
 
 		case AttackPatternKind.Line:
-			AddLinePatternTiles(attacker.mapindex, originIndex, attack.LineLength, tiles);
+			AddLinePatternTiles(attacker.mapindex, originIndex, attack.LineLength, attack.MaxRange, tiles);
 			break;
 
 		case AttackPatternKind.Cone:
@@ -813,8 +820,11 @@ private List<int> BuildAttackPatternTiles(GridEntity attacker, int originIndex, 
 	return tiles;
 }
 
-// Adds the line attack pattern tiles to the attack layer
-private void AddLinePatternTiles(int attackerIndex, int originIndex, int maxLength, List<int> output)
+// Adds the line attack pattern tiles to the attack layer.
+// Cardinal aim: steps along one axis. Diagonal aim: each step moves both axes (e.g. down-left each time).
+// Stops before tiles outside maxRangeFromAttacker (same metric as GetTilesWithinAttackRange) so a
+// diagonal beam cannot extend past where the attack is allowed to reach.
+private void AddLinePatternTiles(int attackerIndex, int originIndex, int maxLength, int maxRangeFromAttacker, List<int> output)
 {
 	Vector2I from = GetTilePos(attackerIndex);
 	Vector2I to = GetTilePos(originIndex);
@@ -823,6 +833,8 @@ private void AddLinePatternTiles(int attackerIndex, int originIndex, int maxLeng
 
 	if (dx == 0 && dy == 0)
 		return;
+
+	HashSet<int> inAttackRange = new HashSet<int>(GetTilesWithinAttackRange(attackerIndex, maxRangeFromAttacker));
 
 	int currentX = from.X;
 	int currentY = from.Y;
@@ -837,6 +849,9 @@ private void AddLinePatternTiles(int attackerIndex, int originIndex, int maxLeng
 
 		int idx = currentY * mapWidthInTiles + currentX;
 		if (allTiles[idx].tileName == "mountain")
+			break;
+
+		if (!inAttackRange.Contains(idx))
 			break;
 
 		output.Add(idx);

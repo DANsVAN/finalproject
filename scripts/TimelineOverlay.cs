@@ -45,6 +45,7 @@ public partial class TimelineOverlay : CanvasLayer
 
 		// Avoid overlapping tweens causing jitter/ghosting.
 		_activeTween?.Kill();
+		CleanupOrphanedIcons();
 		Tween updateTween = GetTree().CreateTween();
 		updateTween.SetParallel(true);
 		_activeTween = updateTween;
@@ -96,6 +97,24 @@ public partial class TimelineOverlay : CanvasLayer
 		foreach (ulong removedId in toRemove)
 			_iconNodesByEntityId.Remove(removedId);
 
+	}
+
+	// If a previous tween is killed, Finished callbacks may not run.
+	// This removes icon nodes that are no longer tracked in _iconNodesByEntityId.
+	private void CleanupOrphanedIcons()
+	{
+		if (_iconsRoot == null) return;
+
+		HashSet<TextureRect> trackedNodes = new HashSet<TextureRect>(_iconNodesByEntityId.Values);
+		Godot.Collections.Array<Node> children = _iconsRoot.GetChildren();
+		foreach (Node child in children)
+		{
+			if (child is not TextureRect iconNode)
+				continue;
+
+			if (!trackedNodes.Contains(iconNode))
+				iconNode.QueueFree();
+		}
 	}
 
 	// Creates a new icon node for the entity if it doesn't exist, otherwise returns the existing node

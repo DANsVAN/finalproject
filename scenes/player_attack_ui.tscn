@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://dh2okjfofbqlh"]
 
 [ext_resource type="Script" uid="uid://drjq1ahpbkoc8" path="res://scripts/PlayerAttackController.cs" id="1_player_attack"]
-[ext_resource type="Texture2D" uid="uid://brmehfkil4e3w" path="res://assets/GridEntityAssets/Basic Monster Animations/Brawny Ogre/BrawnyOgre.png" id="2_ogre_icon"]
 
 [node name="PlayerAttackUi" type="CanvasLayer" unique_id=697434787]
 layer = 20
@@ -33,22 +32,16 @@ theme_override_constants/separation = 8
 custom_minimum_size = Vector2(120, 56)
 layout_mode = 2
 text = "Strike"
-icon = ExtResource("2_ogre_icon")
-expand_icon = true
 
 [node name="Attack1" type="Button" parent="Root/VBox/AttackRow" unique_id=1462334575]
 custom_minimum_size = Vector2(120, 56)
 layout_mode = 2
 text = "Line"
-icon = ExtResource("2_ogre_icon")
-expand_icon = true
 
 [node name="Attack2" type="Button" parent="Root/VBox/AttackRow" unique_id=1705805064]
 custom_minimum_size = Vector2(120, 56)
 layout_mode = 2
 text = "Blast"
-icon = ExtResource("2_ogre_icon")
-expand_icon = true
 
 [node name="EndTurn" type="Button" parent="Root/VBox" unique_id=1584293358]
 custom_minimum_size = Vector2(160, 40)
