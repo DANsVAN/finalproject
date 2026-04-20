@@ -83,6 +83,10 @@ public partial class WorldMapPerlinNoise : Node2D
 	private bool _playerHasAttackedThisTurn;
 	private int _lastAttackHoverIndex = -1;
 
+	private bool _gameOverActive;
+	private const string GameOverOverlayScenePath = "res://scenes/game_over_overlay.tscn";
+	private const string NextRoundOverlayScenePath = "res://scenes/next_round_overlay.tscn";
+
 	private static readonly Vector2I AttackReachAtlas = new Vector2I(1, 0); // snow tile in current tileset
 	private static readonly Vector2I AttackPreviewAtlas = new Vector2I(0, 3); // grass tile placeholder
 	public bool isplayer = true;
@@ -119,7 +123,6 @@ public partial class WorldMapPerlinNoise : Node2D
 
 	public override void _Ready()
 	{
-		
 		maxNumberOfTiles = mapWidthInTiles * mapHightInTiles;
 		allTiles = new Tile[maxNumberOfTiles];
 		highlightLayer = GetNode<TileMapLayer>("%HighlightLayer");
@@ -131,25 +134,203 @@ public partial class WorldMapPerlinNoise : Node2D
 		playerAttackUi.AttackSelected += OnPlayerAttackSelected;
 		playerAttackUi.AttackDeselected += OnPlayerAttackDeselected;
 		playerAttackUi.EndTurnPressed += OnPlayerEndTurnPressed;
-		mapMiddle = (mapWidthInTiles * mapHightInTiles)/2;
+		mapMiddle = (mapWidthInTiles * mapHightInTiles) / 2;
 		mapEnd = (mapWidthInTiles * mapHightInTiles) - 1;
-		bool enemy = false;
-		bool player = true;
+
+		StartCombatFromRunState();
+	}
+
+	private void StartCombatFromRunState()
+	{
 		makeMap();
 		generateNeighborsOfTiles();
+		SpawnSquadFromCarryoverOrSelection();
+		SpawnEnemiesForCurrentRound();
+		PositionAllEntintys();
+		ResetUiForCombatStart();
+		takeTurn();
+	}
 
-		List<CharacterClass> selectedSquad = SquadSelectionState.GetSelectedOrDefaultSquad();
-		for (int i = 0; i < selectedSquad.Count; i++)
+	private void SpawnSquadFromCarryoverOrSelection()
+	{
+		if (!RunSession.HasPendingPlayerCarryovers)
 		{
-			SpawnEntity(EntityPlayerFighter, GD.RandRange(mapStart, mapMiddle), player, selectedSquad[i]);
+			SpawnSquadFromSelection();
+			return;
 		}
 
-		SpawnEntity(EntityEnemyFighter,GD.RandRange(mapMiddle + 1, mapEnd),enemy);
-		SpawnEntity(EntityEnemyFighter,GD.RandRange(mapMiddle + 1, mapEnd),enemy);
-		SpawnEntity(EntityEnemyFighter,GD.RandRange(mapMiddle + 1, mapEnd),enemy);
-		SpawnEntity(EntityEnemyFighter,GD.RandRange(mapMiddle + 1, mapEnd),enemy);
+		List<SquadMemberCarryover> list = RunSession.ConsumePendingPlayerCarryovers();
+		if (list.Count == 0)
+		{
+			SpawnSquadFromSelection();
+			return;
+		}
+
+		const bool player = true;
+		foreach (SquadMemberCarryover entry in list)
+		{
+			if (entry.Class == null)
+				continue;
+
+			SpawnEntity(EntityPlayerFighter, GD.RandRange(mapStart, mapMiddle), player, entry.Class);
+			if (allEntitys.Count > 0)
+			{
+				GridEntity ge = allEntitys[allEntitys.Count - 1];
+				if (ge.IsPlayer)
+					ge.RestoreCarriedHealth(entry.CurrentHealth, entry.MaxHealth);
+			}
+		}
+	}
+
+	private void SpawnSquadFromSelection()
+	{
+		List<CharacterClass> selectedSquad = SquadSelectionState.GetSelectedOrDefaultSquad();
+		const bool player = true;
+		for (int i = 0; i < selectedSquad.Count; i++)
+			SpawnEntity(EntityPlayerFighter, GD.RandRange(mapStart, mapMiddle), player, selectedSquad[i]);
+	}
+
+	private void SpawnEnemiesForCurrentRound()
+	{
+		const int baseEnemyCount = 4;
+		int extra = Math.Min(Math.Max(0, RunSession.CurrentRound - 1) / 2, 4);
+		int totalEnemies = baseEnemyCount + extra;
+		const bool enemyFlag = false;
+		int playerCountBeforeEnemies = allEntitys.Count;
+		for (int i = 0; i < totalEnemies; i++)
+			SpawnEntity(EntityEnemyFighter, GD.RandRange(mapMiddle + 1, mapEnd), enemyFlag);
+
+		for (int i = playerCountBeforeEnemies; i < allEntitys.Count; i++)
+		{
+			if (!allEntitys[i].IsPlayer)
+				allEntitys[i].ApplyEnemyRoundScaling(RunSession.CurrentRound);
+		}
+	}
+
+	private void ResetUiForCombatStart()
+	{
+		isMoving = false;
+		_playerMode = PlayerTurnMode.Movement;
+		_selectedAttackIndex = -1;
+		_playerHasMovedThisTurn = false;
+		_playerHasAttackedThisTurn = false;
+		lastHoveredIndex = -1;
+		_lastAttackHoverIndex = -1;
+		currentReachableTiles.Clear();
+		highlightLayer?.Clear();
+		pathLayer?.Clear();
+		attackLayer?.Clear();
+	}
+
+	private void ClearAllEntitiesAndTileOccupants()
+	{
+		List<GridEntity> snapshot = new List<GridEntity>(allEntitys);
+		foreach (GridEntity entity in snapshot)
+		{
+			if (entity == null)
+				continue;
+			if (entity.mapindex >= 0 && entity.mapindex < allTiles.Length && allTiles[entity.mapindex].occupant == entity)
+				allTiles[entity.mapindex].occupant = null;
+			entity.Node2DEntity?.QueueFree();
+		}
+
+		allEntitys.Clear();
+		firstEntityInTheTimeline = null;
+		isMoving = false;
+	}
+
+	private void StartNextRound()
+	{
+		ClearAllEntitiesAndTileOccupants();
+		RunSession.RegisterRoundWon();
+		makeMap();
+		generateNeighborsOfTiles();
+		SpawnSquadFromCarryoverOrSelection();
+		SpawnEnemiesForCurrentRound();
 		PositionAllEntintys();
+		ResetUiForCombatStart();
+		timelineOverlay?.SetQueue(new List<GridEntity>());
+		GetTree().Paused = false;
 		takeTurn();
+	}
+
+	private List<SquadMemberCarryover> CaptureLivingPlayersForCarryover()
+	{
+		List<SquadMemberCarryover> list = new List<SquadMemberCarryover>();
+		foreach (GridEntity entity in allEntitys)
+		{
+			if (!entity.IsPlayer || entity.CurrentHealth <= 0 || entity.AssignedClass == null)
+				continue;
+
+			list.Add(new SquadMemberCarryover
+			{
+				Class = entity.AssignedClass,
+				CurrentHealth = entity.CurrentHealth,
+				MaxHealth = entity.MaxHealth
+			});
+		}
+
+		return list;
+	}
+
+	private void ShowNextRoundInterstitial(int roundCleared, int nextRoundNumber)
+	{
+		GetTree().Paused = true;
+		playerAttackUi?.SetTurnActive(false);
+
+		PackedScene scene = GD.Load<PackedScene>(NextRoundOverlayScenePath);
+		NextRoundOverlay overlay = scene.Instantiate<NextRoundOverlay>();
+		AddChild(overlay);
+		overlay.Begin(() =>
+		{
+			GetTree().Paused = false;
+			StartNextRound();
+		}, roundCleared, nextRoundNumber);
+	}
+
+	private void HandleCombatEnded()
+	{
+		bool hasPlayers = false;
+		bool hasEnemies = false;
+		foreach (GridEntity entity in allEntitys)
+		{
+			if (IsPlayerUnit(entity))
+				hasPlayers = true;
+			if (IsEnemy(entity))
+				hasEnemies = true;
+		}
+
+		if (hasPlayers && !hasEnemies)
+		{
+			List<SquadMemberCarryover> carry = CaptureLivingPlayersForCarryover();
+			RunSession.SetPendingPlayerCarryovers(carry);
+			int roundCleared = RunSession.CurrentRound;
+			int nextRound = RunSession.CurrentRound + 1;
+			ShowNextRoundInterstitial(roundCleared, nextRound);
+			return;
+		}
+
+		if (!hasPlayers)
+			ShowGameOverOverlay();
+	}
+
+	private void ShowGameOverOverlay()
+	{
+		if (_gameOverActive)
+			return;
+
+		_gameOverActive = true;
+		playerAttackUi?.SetTurnActive(false);
+		highlightLayer?.Clear();
+		pathLayer?.Clear();
+		attackLayer?.Clear();
+		currentReachableTiles.Clear();
+
+		PackedScene overlayScene = GD.Load<PackedScene>(GameOverOverlayScenePath);
+		GameOverOverlay overlay = overlayScene.Instantiate<GameOverOverlay>();
+		AddChild(overlay);
+		overlay.Setup(RunSession.Score, RunSession.CurrentRound);
+		GetTree().Paused = true;
 	}
 	public FastNoiseLite generateRandNoise()
 	{
@@ -225,6 +406,9 @@ private int lastHoveredIndex = -1;
 
 public override void _Process(double delta)
 {
+	if (_gameOverActive)
+		return;
+
 	// Only allow movement preview and click input on player turns.
 	if (isMoving || firstEntityInTheTimeline == null || !firstEntityInTheTimeline.IsPlayer)
 	{
@@ -1022,6 +1206,14 @@ private void TryExecutePlayerAttack(GridEntity player, PlayerAttackDefinition at
 		CombatResolver.TryAttack(player, target, attack.MaxRange, attack.Damage, GetTilePos, RemoveEntity);
 	}
 
+	if (IsCombatOver())
+	{
+		attackLayer.Clear();
+		pathLayer.Clear();
+		HandleCombatEnded();
+		return;
+	}
+
 	_playerHasAttackedThisTurn = true;
 	attackLayer.Clear();
 	pathLayer.Clear();
@@ -1064,6 +1256,9 @@ private int GetMovementCost(int index)
 private void RemoveEntity(GridEntity entity)
 {
 	if (entity == null) return;
+
+	if (IsEnemy(entity))
+		RunSession.RegisterEnemyKill();
 
 	if (entity.mapindex >= 0 && entity.mapindex < allTiles.Length && allTiles[entity.mapindex].occupant == entity)
 		allTiles[entity.mapindex].occupant = null;
@@ -1124,6 +1319,8 @@ private void ExecuteEnemyTurn(GridEntity enemy)
 			highlightLayer.Clear();
 			pathLayer.Clear();
 			currentReachableTiles.Clear();
+			playerAttackUi?.SetTurnActive(false);
+			HandleCombatEnded();
 			return;
 		}
 
@@ -1146,6 +1343,9 @@ private void ExecuteEnemyTurn(GridEntity enemy)
 
 public async void takeTurn() // Mark as async to allow a small delay for "thinking"
 {
+	if (_gameOverActive)
+		return;
+
 	// Checks if combat is over and clears the highlight and path layers
 	if (IsCombatOver())
 	{
@@ -1154,6 +1354,7 @@ public async void takeTurn() // Mark as async to allow a small delay for "thinki
 		attackLayer.Clear();
 		currentReachableTiles.Clear();
 		playerAttackUi?.SetTurnActive(false);
+		HandleCombatEnded();
 		return;
 	}
 

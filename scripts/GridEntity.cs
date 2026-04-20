@@ -22,6 +22,9 @@ public partial class GridEntity : Node2D
 	public Node2D Node2DEntity;
 	public bool IsPlayer;
 
+	/// <summary>Set when <see cref="ApplyCharacterClass"/> runs; used for next-round squad carryover.</summary>
+	public CharacterClass AssignedClass { get; private set; }
+
 	public override void _Ready()
 	{
 		CacheHealthBarNodes();
@@ -50,6 +53,8 @@ public partial class GridEntity : Node2D
 	{
 		if (classDef == null) return;
 
+		AssignedClass = classDef;
+
 		MovementRange = classDef.MovementRange;
 		MaxHealth = classDef.MaxHealth;
 		CurrentHealth = classDef.MaxHealth;
@@ -68,6 +73,29 @@ public partial class GridEntity : Node2D
 			sprite = spriteNode;
 		}
 
+		RefreshHealthBar();
+	}
+
+	/// <summary>Apply HP after respawn from round carryover (after <see cref="ApplyCharacterClass"/>).</summary>
+	public void RestoreCarriedHealth(int currentHp, int maxHp)
+	{
+		MaxHealth = Math.Max(1, maxHp);
+		CurrentHealth = Math.Clamp(currentHp, 0, MaxHealth);
+		RefreshHealthBar();
+	}
+
+	/// <summary>Scales enemy combat stats for later rounds (players unchanged).</summary>
+	public void ApplyEnemyRoundScaling(int round)
+	{
+		if (IsPlayer || round < 1)
+			return;
+
+		float m = 1f + 0.12f * (round - 1);
+		MaxHealth = Math.Max(1, Mathf.RoundToInt(MaxHealth * m));
+		CurrentHealth = MaxHealth;
+		BaseDamage = Math.Max(1, Mathf.RoundToInt(BaseDamage * m));
+		BaseSpeed = Math.Max(1, Mathf.RoundToInt(BaseSpeed * m));
+		CurrentSpeed = BaseSpeed;
 		RefreshHealthBar();
 	}
 

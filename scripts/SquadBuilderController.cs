@@ -159,6 +159,7 @@ public partial class SquadBuilderController : CanvasLayer
 		}
 
 		SquadSelectionState.SetSelectedSquad(squad);
+		RunSession.ResetForNewRun();
 		_gameManager?.ChangeChildScene(GameWorldScenePath);
 	}
 
