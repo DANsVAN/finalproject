@@ -13,7 +13,12 @@ public partial class TimelineOverlay : CanvasLayer
 	private Control _iconsRoot;
 	private Panel _currentHighlight;
 
-	private readonly Dictionary<ulong, TextureRect> _iconNodesByEntityId = new Dictionary<ulong, TextureRect>();
+	// One icon per timeline slot so the same entity can appear in multiple slots.
+	private TextureRect[] _slotIcons;
+
+	// Instance id last shown in each slot; 0 means none. Used to slide in from the right when the occupant changes.
+	private ulong[] _slotLastEntityId;
+
 	private Tween _activeTween;
 
 	public override void _Ready()
@@ -31,12 +36,18 @@ public partial class TimelineOverlay : CanvasLayer
 		if (queue == null) return;
 		if (_queueRoot == null || _iconsRoot == null || _currentHighlight == null) return;
 
-		// Clip the queue to the number of slots available
+		// Clip the queue to the number of slots available; first occurrence of each entity id wins
 		List<GridEntity> clippedQueue = new List<GridEntity>();
-		for (int i = 0; i < queue.Count && i < SlotCount; i++)
+		HashSet<ulong> seenEntityIds = new HashSet<ulong>();
+		for (int i = 0; i < queue.Count && clippedQueue.Count < SlotCount; i++)
 		{
-			if (queue[i] != null && IsInstanceValid(queue[i]))
-				clippedQueue.Add(queue[i]);
+			if (queue[i] == null || !IsInstanceValid(queue[i]))
+				continue;
+			ulong id = queue[i].GetInstanceId();
+			if (seenEntityIds.Contains(id))
+				continue;
+			seenEntityIds.Add(id);
+			clippedQueue.Add(queue[i]);
 		}
 
 		_currentHighlight.Visible = clippedQueue.Count > 0;
@@ -45,33 +56,28 @@ public partial class TimelineOverlay : CanvasLayer
 
 		// Avoid overlapping tweens causing jitter/ghosting.
 		_activeTween?.Kill();
-		CleanupOrphanedIcons();
+		EnsureSlotIcons();
 		Tween updateTween = GetTree().CreateTween();
 		updateTween.SetParallel(true);
 		_activeTween = updateTween;
 
-		// Loops over the shortened queue and adds entity to the timeline overlay order
-		List<ulong> nextOrder = new List<ulong>();
 		for (int i = 0; i < clippedQueue.Count; i++)
 		{
 			GridEntity entity = clippedQueue[i];
+			TextureRect iconNode = GetSlotIcon(i);
 			ulong entityId = entity.GetInstanceId();
-			nextOrder.Add(entityId);
-
-			// Checks if the entity already exists in the timeline overlay
-			bool alreadyExists = _iconNodesByEntityId.TryGetValue(entityId, out TextureRect iconNode);
-			if (!alreadyExists)
-				iconNode = GetOrCreateIconNode(entityId);
 
 			iconNode.Texture = BuildIconTexture(entity.sprite);
 
 			Vector2 endPos = GetSlotPosition(i);
+			// Slide in from the right when this slot was empty/hidden or is showing a different entity than last frame
+			// (per-slot nodes reuse the same Control when the queue reorders).
+			bool slideInFromRight = !iconNode.Visible || iconNode.Modulate.A < 0.01f
+				|| entityId != _slotLastEntityId[i];
 			iconNode.Visible = true;
 
-			// If the entity doesn't exist in the timeline overlay, it slides in from the right
-			if (!alreadyExists)
+			if (slideInFromRight)
 			{
-				// New icons slide/fade in from the right.
 				iconNode.Position = endPos + new Vector2(18, 0);
 				iconNode.Modulate = new Color(1, 1, 1, 0);
 			}
@@ -80,61 +86,55 @@ public partial class TimelineOverlay : CanvasLayer
 				iconNode.Modulate = Colors.White;
 			}
 
-			// Moves the sprite icon to the correct position based on the index of the entity in the queue
 			AnimateIcon(updateTween, iconNode, endPos, 1.0f);
+			_slotLastEntityId[i] = entityId;
 		}
 
-		List<ulong> toRemove = new List<ulong>();
-		foreach (KeyValuePair<ulong, TextureRect> pair in _iconNodesByEntityId)
+		for (int i = clippedQueue.Count; i < SlotCount; i++)
 		{
-			if (!nextOrder.Contains(pair.Key))
+			TextureRect iconNode = GetSlotIcon(i);
+			_slotLastEntityId[i] = 0;
+			Vector2 startPos = iconNode.Position;
+			AnimateIcon(updateTween, iconNode, startPos + new Vector2(-20, 0), 0.0f, () =>
 			{
-				AnimateIcon(updateTween, pair.Value, pair.Value.Position + new Vector2(-20, 0), 0.0f, () => pair.Value.QueueFree());
-				toRemove.Add(pair.Key);
-			}
+				iconNode.Visible = false;
+			});
 		}
-
-		foreach (ulong removedId in toRemove)
-			_iconNodesByEntityId.Remove(removedId);
-
 	}
 
-	// If a previous tween is killed, Finished callbacks may not run.
-	// This removes icon nodes that are no longer tracked in _iconNodesByEntityId.
-	private void CleanupOrphanedIcons()
+	private void EnsureSlotIcons()
 	{
-		if (_iconsRoot == null) return;
+		if (_slotIcons != null && _slotIcons.Length == SlotCount)
+			return;
 
-		HashSet<TextureRect> trackedNodes = new HashSet<TextureRect>(_iconNodesByEntityId.Values);
-		Godot.Collections.Array<Node> children = _iconsRoot.GetChildren();
-		foreach (Node child in children)
+		if (_iconsRoot != null)
 		{
-			if (child is not TextureRect iconNode)
-				continue;
+			foreach (Node child in _iconsRoot.GetChildren())
+				child.QueueFree();
+		}
 
-			if (!trackedNodes.Contains(iconNode))
-				iconNode.QueueFree();
+		_slotIcons = new TextureRect[SlotCount];
+		_slotLastEntityId = new ulong[SlotCount];
+		for (int i = 0; i < SlotCount; i++)
+		{
+			TextureRect iconNode = new TextureRect();
+			iconNode.Name = $"TimelineSlot_{i}";
+			iconNode.ExpandMode = TextureRect.ExpandModeEnum.FitWidthProportional;
+			iconNode.StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered;
+			iconNode.TextureFilter = CanvasItem.TextureFilterEnum.Nearest;
+			iconNode.Size = new Vector2(IconSize, IconSize);
+			iconNode.Position = iconNode.Position.Round();
+			iconNode.MouseFilter = Control.MouseFilterEnum.Ignore;
+			iconNode.Visible = false;
+			_iconsRoot.AddChild(iconNode);
+			_slotIcons[i] = iconNode;
 		}
 	}
 
-	// Creates a new icon node for the entity if it doesn't exist, otherwise returns the existing node
-	private TextureRect GetOrCreateIconNode(ulong entityId)
+	private TextureRect GetSlotIcon(int slotIndex)
 	{
-		if (_iconNodesByEntityId.TryGetValue(entityId, out TextureRect existing))
-			return existing;
-
-		TextureRect iconNode = new TextureRect();
-		iconNode.Name = $"EntityIcon_{entityId}";
-		iconNode.ExpandMode = TextureRect.ExpandModeEnum.FitWidthProportional;
-		iconNode.StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered;
-		iconNode.TextureFilter = CanvasItem.TextureFilterEnum.Nearest;
-		iconNode.Size = new Vector2(IconSize, IconSize);
-		iconNode.Position = iconNode.Position.Round();
-		iconNode.MouseFilter = Control.MouseFilterEnum.Ignore;
-		_iconsRoot.AddChild(iconNode);
-
-		_iconNodesByEntityId[entityId] = iconNode;
-		return iconNode;
+		EnsureSlotIcons();
+		return _slotIcons[slotIndex];
 	}
 
 	// Gets the position of the slot in the timeline UI
@@ -187,4 +187,3 @@ public partial class TimelineOverlay : CanvasLayer
 			tween.Finished += onFinished;
 	}
 }
-

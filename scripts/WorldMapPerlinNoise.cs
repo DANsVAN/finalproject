@@ -495,14 +495,31 @@ private List<GridEntity> BuildTimelinePreview(int count)
 	preview.Add(firstEntityInTheTimeline);
 	if (count == 1) return preview;
 
+	// Only one combatant: repeat them to fill timeline slots (overlay uses one icon per slot).
+	if (allEntitys.Count == 1)
+	{
+		while (preview.Count < count)
+			preview.Add(firstEntityInTheTimeline);
+		return preview;
+	}
+
 	// 3. Create a list of all entities to simulate
 	List<GridEntity> simulationUnits = new List<GridEntity>(allEntitys);
 	Dictionary<GridEntity, int> simulatedSpeeds = new Dictionary<GridEntity, int>();
 	foreach (GridEntity entity in simulationUnits)
 		simulatedSpeeds[entity] = entity.CurrentSpeed;
 
-	// 4. Loop through the entities and add them to the preview in the order of their speed
-	for (int i = 1; i < count; i++)
+	// Track who is already shown so the same unit does not occupy two preview slots
+	// (the overlay historically used one node per entity id).
+	HashSet<GridEntity> inPreview = new HashSet<GridEntity>();
+	foreach (GridEntity e in preview)
+		inPreview.Add(e);
+
+	// 4. Loop through simulated turns until the preview is full. If the simulated next actor
+	// is already in the preview, advance ATB without appending so another unit can appear.
+	int safety = 0;
+	const int maxSafety = 256;
+	while (preview.Count < count && safety++ < maxSafety)
 	{
 		GridEntity next = simulationUnits[0];
 		foreach (GridEntity entity in simulationUnits)
@@ -511,9 +528,21 @@ private List<GridEntity> BuildTimelinePreview(int count)
 				next = entity;
 		}
 
+		if (inPreview.Contains(next))
+		{
+			foreach (GridEntity entity in simulationUnits)
+			{
+				if (entity == next)
+					simulatedSpeeds[entity] = entity.BaseSpeed;
+				else
+					simulatedSpeeds[entity] += entity.BaseSpeed;
+			}
+			continue;
+		}
+
 		preview.Add(next);
-		
-		// 5. Loop through the entities and update their speed in the simulation
+		inPreview.Add(next);
+
 		foreach (GridEntity entity in simulationUnits)
 		{
 			if (entity == next)
