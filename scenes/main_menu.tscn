@@ -87,9 +87,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -280.0
-offset_top = -230.0
+offset_top = -190.0
 offset_right = 280.0
-offset_bottom = 230.0
+offset_bottom = 190.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_mainpanel")
@@ -140,15 +140,6 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_secondary_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_secondary_hover")
 text = "How To Play"
 
-[node name="SettingsBTN" type="Button" parent="CenterPanel/PanelMargin/VBoxContainer" unique_id=1632715845]
-layout_mode = 2
-custom_minimum_size = Vector2(0, 48)
-theme_override_font_sizes/font_size = 18
-theme_override_styles/normal = SubResource("StyleBoxFlat_secondary")
-theme_override_styles/hover = SubResource("StyleBoxFlat_secondary_hover")
-theme_override_styles/focus = SubResource("StyleBoxFlat_secondary_hover")
-text = "Settings"
-
 [node name="ExitBTN" type="Button" parent="CenterPanel/PanelMargin/VBoxContainer" unique_id=1618374400]
 layout_mode = 2
 custom_minimum_size = Vector2(0, 48)
@@ -160,5 +151,4 @@ text = "Exit"
 
 [connection signal="pressed" from="CenterPanel/PanelMargin/VBoxContainer/PlayBTN" to="." method="_on_play_btn_pressed"]
 [connection signal="pressed" from="CenterPanel/PanelMargin/VBoxContainer/HowToPlayBTN" to="." method="_on_how_to_play_btn_pressed"]
-[connection signal="pressed" from="CenterPanel/PanelMargin/VBoxContainer/SettingsBTN" to="." method="_on_settings_btn_pressed"]
 [connection signal="pressed" from="CenterPanel/PanelMargin/VBoxContainer/ExitBTN" to="." method="_on_exit_btn_pressed"]

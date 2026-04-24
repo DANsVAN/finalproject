@@ -5,7 +5,6 @@ using System.Collections.Generic;
 public partial class MainMenu : CanvasLayer
 {
 	private const string SquadBuilderScenePath = "res://scenes/squad_builder.tscn";
-	private const string SettingsScenePath = "res://scenes/settings.tscn";
 	private const string HowToPlayScenePath = "res://scenes/how_to_play.tscn";
 
 	private string secneFilePath;
@@ -16,13 +15,6 @@ public partial class MainMenu : CanvasLayer
 	public void _on_play_btn_pressed()
 	{
 		secneFilePath = SquadBuilderScenePath;
-		this.FollowViewportEnabled = true;
-		gameManger.ChangeChildScene(secneFilePath);
-	}
-
-	public void _on_settings_btn_pressed()
-	{
-		secneFilePath = SettingsScenePath;
 		this.FollowViewportEnabled = true;
 		gameManger.ChangeChildScene(secneFilePath);
 	}
@@ -46,7 +38,6 @@ public partial class MainMenu : CanvasLayer
 
 		SetupButtonFeedback("CenterPanel/PanelMargin/VBoxContainer/PlayBTN");
 		SetupButtonFeedback("CenterPanel/PanelMargin/VBoxContainer/HowToPlayBTN");
-		SetupButtonFeedback("CenterPanel/PanelMargin/VBoxContainer/SettingsBTN");
 		SetupButtonFeedback("CenterPanel/PanelMargin/VBoxContainer/ExitBTN");
 
 		GetNode<Button>("CenterPanel/PanelMargin/VBoxContainer/PlayBTN").GrabFocus();
