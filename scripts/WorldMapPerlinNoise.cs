@@ -51,7 +51,8 @@ public partial class WorldMapPerlinNoise : Node2D
 
 	[Export] int mapWidthInTiles = 50;
 	[Export] int mapHightInTiles = 25;
-	[Export] int tileSizeInpixels = 16;
+	[Export] int tileSizeInpixels = 32;
+	[Export] int sourceTileSizeInPixels = 16;
 	[Export] double noiseScale = 0.002;
 	[Export] double grassThreshold = 0.5;
 	[Export] double waterThreshold = 0.6;
@@ -76,6 +77,7 @@ public partial class WorldMapPerlinNoise : Node2D
 	List<GridEntity> allEntitys = new List<GridEntity> {};
 	TimelineOverlay timelineOverlay;
 	PlayerAttackController playerAttackUi;
+	CameraController worldCamera;
 
 	private PlayerTurnMode _playerMode = PlayerTurnMode.Movement;
 	private int _selectedAttackIndex = -1;
@@ -130,6 +132,7 @@ public partial class WorldMapPerlinNoise : Node2D
 		attackLayer = GetNode<TileMapLayer>("%AttackLayer");
 		timelineOverlay = GetNode<TimelineOverlay>("%TimelineOverlay");
 		playerAttackUi = GetNode<PlayerAttackController>("%PlayerAttackUi");
+		worldCamera = GetNodeOrNull<CameraController>("Camera2D");
 
 		playerAttackUi.AttackSelected += OnPlayerAttackSelected;
 		playerAttackUi.AttackDeselected += OnPlayerAttackDeselected;
@@ -507,10 +510,7 @@ public void HighlightPath(List<int> path)
 		Vector2 screenSize = GetViewportRect().Size;
 
 		// 2. Calculate world size in pixels
-		Vector2 worldPixelSize = new Vector2(
-			mapWidthInTiles * tileSizeInpixels,
-			mapHightInTiles * tileSizeInpixels
-		);
+		Vector2 worldPixelSize = GetWorldPixelSize();
 
 		// 3. Calculate the centering offset
 		// We cast to int and use Math.Floor to keep pixels perfectly aligned
@@ -518,10 +518,50 @@ public void HighlightPath(List<int> path)
 		float offsetY = (float)Math.Floor((screenSize.Y - worldPixelSize.Y) / 2.0f);
 		GlobalPosition = new Vector2(offsetX, offsetY);
 	}
+
+	private float GetWorldVisualScale()
+	{
+		return Mathf.Max(0.1f, (float)tileSizeInpixels / Mathf.Max(1, sourceTileSizeInPixels));
+	}
+
+	private Vector2 GetWorldPixelSize()
+	{
+		return new Vector2(
+			mapWidthInTiles * tileSizeInpixels,
+			mapHightInTiles * tileSizeInpixels
+		);
+	}
+
+	private Rect2 GetWorldBoundsRect()
+	{
+		return new Rect2(GlobalPosition, GetWorldPixelSize());
+	}
+
+	private void ApplyWorldScaleAndCameraBounds()
+	{
+		float visualScale = GetWorldVisualScale();
+		Vector2 uniformScale = new Vector2(visualScale, visualScale);
+
+		worldMap ??= GetNode<TileMapLayer>("%WorldMapLayer");
+		worldMap.Scale = uniformScale;
+		highlightLayer.Scale = uniformScale;
+		pathLayer.Scale = uniformScale;
+		attackLayer.Scale = uniformScale;
+
+		foreach (GridEntity entity in allEntitys)
+		{
+			if (entity?.Node2DEntity != null)
+				entity.Node2DEntity.Scale = uniformScale;
+		}
+
+		worldCamera?.SetWorldBounds(GetWorldBoundsRect());
+	}
+
 	public void makeMap()
 	{
 		CenterMap();
 		worldMap = GetNode<TileMapLayer>("%WorldMapLayer");
+		ApplyWorldScaleAndCameraBounds();
 		generateMapFromNoise(generateRandNoise());
 	}
 public void generateNeighborsOfTiles()
@@ -604,6 +644,7 @@ public void SpawnEntity(PackedScene PackedEntityScene, int mapIndex, bool player
 		
 		// Ensure sprite reference is set (since _Ready might not have fired yet)
 		gridEntity.sprite = entityNode.GetNode<Sprite2D>("Sprite2D");
+		entityNode.Scale = new Vector2(GetWorldVisualScale(), GetWorldVisualScale());
 		if (player)
 		{
 			CharacterClass classDef = playerClass;
@@ -623,8 +664,7 @@ public void PositionAllEntintys()
 {
 	foreach (GridEntity entity in allEntitys)
 {
-	Vector2 pixlePosition = new Vector2((1 * allTiles[entity.mapindex].tilePos.X * allTiles[entity.mapindex].occupant.spriteSize) + (allTiles[entity.mapindex].occupant.spriteSize / 2) ,(1 * allTiles[entity.mapindex].tilePos.Y  * allTiles[entity.mapindex].occupant.spriteSize) + (allTiles[entity.mapindex].occupant.spriteSize / 2));
-	entity.Node2DEntity.Position = pixlePosition;
+	entity.Node2DEntity.GlobalPosition = TileIndexToWorldPos(entity.mapindex);
 }
 }
 public void updateTimeline()
@@ -1448,6 +1488,7 @@ public void MoveEntity(GridEntity entity, int newIndex, Action onMoveComplete = 
 	RemoteTransform2D remote = new RemoteTransform2D();
 	remote.RemotePath = entity.Node2DEntity.GetPath();
 	remote.UpdateRotation = false; 
+	remote.UpdateScale = false;
 	follower.AddChild(remote);
 
 	float duration = path.Count * 0.15f; 

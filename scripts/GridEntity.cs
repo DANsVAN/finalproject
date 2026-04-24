@@ -18,7 +18,6 @@ public partial class GridEntity : Node2D
 	public int BaseDamage;
 	public Sprite2D sprite;
 	public int mapindex;
-	public int spriteSize = 16;
 	public Node2D Node2DEntity;
 	public bool IsPlayer;
 

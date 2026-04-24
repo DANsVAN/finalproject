@@ -5,7 +5,8 @@
 [ext_resource type="PackedScene" uid="uid://dahugjxcekk2x" path="res://scenes/enemy_fighter.tscn" id="3_xcgaf"]
 [ext_resource type="TileSet" uid="uid://xqiptqu7qhy7" path="res://assets/world_tile_set.tres" id="4_xcgaf"]
 [ext_resource type="PackedScene" path="res://scenes/timeline_overlay.tscn" id="5_timeline"]
-[ext_resource type="PackedScene" path="res://scenes/player_attack_ui.tscn" id="6_player_attack"]
+[ext_resource type="PackedScene" uid="uid://dh2okjfofbqlh" path="res://scenes/player_attack_ui.tscn" id="6_player_attack"]
+[ext_resource type="Script" uid="uid://dujuu4thoufod" path="res://scripts/CameraController.cs" id="7_camera_controller"]
 
 [node name="WorldMapPerlinNoise" type="Node2D" unique_id=782992415]
 script = ExtResource("1_t1o5u")
@@ -18,6 +19,9 @@ mountainThreshold = 0.8
 worldFractalOctaves = 5
 EntityPlayerFighter = ExtResource("2_e70fe")
 EntityEnemyFighter = ExtResource("3_xcgaf")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=502917291]
+script = ExtResource("7_camera_controller")
 
 [node name="WorldMapLayer" type="TileMapLayer" parent="." unique_id=1512177256]
 unique_name_in_owner = true
@@ -33,13 +37,13 @@ unique_name_in_owner = true
 modulate = Color(1, 0, 1, 0.5137255)
 tile_set = ExtResource("4_xcgaf")
 
-[node name="AttackLayer" type="TileMapLayer" parent="." unique_id=4011228831]
+[node name="AttackLayer" type="TileMapLayer" parent="." unique_id=-283738465]
 unique_name_in_owner = true
 modulate = Color(1, 0.2, 0.2, 0.45)
 tile_set = ExtResource("4_xcgaf")
 
-[node name="TimelineOverlay" parent="." instance=ExtResource("5_timeline")]
+[node name="TimelineOverlay" parent="." unique_id=856221064 instance=ExtResource("5_timeline")]
 unique_name_in_owner = true
 
-[node name="PlayerAttackUi" parent="." instance=ExtResource("6_player_attack")]
+[node name="PlayerAttackUi" parent="." unique_id=695322614 instance=ExtResource("6_player_attack")]
 unique_name_in_owner = true
