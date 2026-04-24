@@ -197,5 +197,11 @@ public partial class CameraController : Camera2D
 	{
 		worldBounds = bounds;
 	}
+
+	public void SnapToWorldPosition(Vector2 worldPosition)
+	{
+		GlobalPosition = worldPosition;
+		_targetPosition = worldPosition;
+	}
 	#endregion
 }

@@ -2,47 +2,88 @@
 
 [ext_resource type="Script" path="res://scripts/HowToPlay.cs" id="1_howto_script"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
+bg_color = Color(0.101961, 0.113725, 0.145098, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.698039, 0.564706, 0.345098, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 8
+
 [node name="HowToPlay" type="CanvasLayer"]
 script = ExtResource("1_howto_script")
+
+[node name="Background" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.0588235, 0.0705882, 0.0980392, 1)
+
+[node name="BackdropTint" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.14902, 0.109804, 0.0666667, 0.313726)
 
 [node name="Root" type="MarginContainer" parent="."]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 24.0
-offset_top = 24.0
-offset_right = -24.0
-offset_bottom = -24.0
+offset_left = 32.0
+offset_top = 28.0
+offset_right = -32.0
+offset_bottom = -28.0
 
-[node name="VBox" type="VBoxContainer" parent="Root"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_right = 0.0
-offset_bottom = 0.0
-theme_override_constants/separation = 12
-
-[node name="Title" type="Label" parent="Root/VBox"]
+[node name="FramePanel" type="PanelContainer" parent="Root"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 28
-text = "How To Play"
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="FramePadding" type="MarginContainer" parent="Root/FramePanel"]
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 22
+
+[node name="VBox" type="VBoxContainer" parent="Root/FramePanel/FramePadding"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="Root/FramePanel/FramePadding/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 34
+text = "Chronicle Of War: How To Play"
 horizontal_alignment = 1
 
-[node name="InstructionsPanel" type="PanelContainer" parent="Root/VBox"]
+[node name="Subtitle" type="Label" parent="Root/FramePanel/FramePadding/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+modulate = Color(0.909804, 0.862745, 0.780392, 0.85)
+text = "Master your squad, survive each round, and outmaneuver the enemy."
+horizontal_alignment = 1
+
+[node name="InstructionsPanel" type="PanelContainer" parent="Root/FramePanel/FramePadding/VBox"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="InstructionsMargin" type="MarginContainer" parent="Root/VBox/InstructionsPanel"]
+[node name="InstructionsMargin" type="MarginContainer" parent="Root/FramePanel/FramePadding/VBox/InstructionsPanel"]
 theme_override_constants/margin_left = 12
 theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 12
 
-[node name="InstructionsScroll" type="ScrollContainer" parent="Root/VBox/InstructionsPanel/InstructionsMargin"]
-custom_minimum_size = Vector2(0, 300)
+[node name="InstructionsScroll" type="ScrollContainer" parent="Root/FramePanel/FramePadding/VBox/InstructionsPanel/InstructionsMargin"]
+custom_minimum_size = Vector2(0, 320)
 size_flags_vertical = 3
 
-[node name="InstructionsText" type="RichTextLabel" parent="Root/VBox/InstructionsPanel/InstructionsMargin/InstructionsScroll"]
+[node name="InstructionsText" type="RichTextLabel" parent="Root/FramePanel/FramePadding/VBox/InstructionsPanel/InstructionsMargin/InstructionsScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -51,8 +92,10 @@ scroll_active = false
 bbcode_enabled = false
 text = "Objective\nDefeat all enemies each round. If all player units are defeated, the run ends.\n\nTurn Flow\n1) On your turn, green-highlighted tiles show where you can move.\n2) Left click a reachable tile to move.\n3) Choose an attack (Strike, Line, or Blast) and left click a valid target area.\n4) Press End Turn when finished.\n\nControls\n- Left Click: Select tiles and attack targets.\n- Middle Mouse Drag: Pan camera.\n- WASD / Arrow Keys: Pan camera.\n- Mouse Wheel or +/-: Zoom camera.\n\nAttack Notes\n- Strike: Single target, short range.\n- Line: Straight-line attack at longer range.\n- Blast: Area attack around the selected target tile.\n\nProgression\nClearing a round carries surviving squad members into the next round."
 
-[node name="BackBTN" type="Button" parent="Root/VBox"]
+[node name="BackBTN" type="Button" parent="Root/FramePanel/FramePadding/VBox"]
 layout_mode = 2
+custom_minimum_size = Vector2(0, 46)
+theme_override_font_sizes/font_size = 18
 text = "Back to Main Menu"
 
-[connection signal="pressed" from="Root/VBox/BackBTN" to="." method="_on_back_btn_pressed"]
+[connection signal="pressed" from="Root/FramePanel/FramePadding/VBox/BackBTN" to="." method="_on_back_btn_pressed"]

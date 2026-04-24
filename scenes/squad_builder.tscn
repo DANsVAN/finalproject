@@ -2,8 +2,34 @@
 
 [ext_resource type="Script" path="res://scripts/SquadBuilderController.cs" id="1_squad_builder"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.101961, 0.113725, 0.145098, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.698039, 0.564706, 0.345098, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 8
+
 [node name="SquadBuilder" type="CanvasLayer"]
 script = ExtResource("1_squad_builder")
+
+[node name="Background" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.0588235, 0.0705882, 0.0980392, 1)
+
+[node name="BackdropTint" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.14902, 0.109804, 0.0666667, 0.313726)
 
 [node name="Root" type="MarginContainer" parent="."]
 anchors_preset = 15
@@ -11,16 +37,43 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 16
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 20
 
 [node name="MainVBox" type="VBoxContainer" parent="Root"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 12
+
+[node name="TitlePanel" type="PanelContainer" parent="Root/MainVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="TitleMargin" type="MarginContainer" parent="Root/MainVBox/TitlePanel"]
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 10
+
+[node name="TitleVBox" type="VBoxContainer" parent="Root/MainVBox/TitlePanel/TitleMargin"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Title" type="Label" parent="Root/MainVBox/TitlePanel/TitleMargin/TitleVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "Assemble Your Warband"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Root/MainVBox/TitlePanel/TitleMargin/TitleVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+modulate = Color(0.909804, 0.862745, 0.780392, 0.85)
+text = "Choose five heroes, review their stats, and prepare for battle."
+horizontal_alignment = 1
 
 [node name="ColumnsRow" type="HBoxContainer" parent="Root/MainVBox"]
 layout_mode = 2
@@ -37,6 +90,7 @@ layout_mode = 2
 [node name="CardPanel" type="PanelContainer" parent="Root/MainVBox/ColumnsRow/Column1"]
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
 [node name="CardPad" type="MarginContainer" parent="Root/MainVBox/ColumnsRow/Column1/CardPanel"]
 layout_mode = 2
@@ -75,6 +129,7 @@ layout_mode = 2
 [node name="CardPanel" type="PanelContainer" parent="Root/MainVBox/ColumnsRow/Column2"]
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
 [node name="CardPad" type="MarginContainer" parent="Root/MainVBox/ColumnsRow/Column2/CardPanel"]
 layout_mode = 2
@@ -113,6 +168,7 @@ layout_mode = 2
 [node name="CardPanel" type="PanelContainer" parent="Root/MainVBox/ColumnsRow/Column3"]
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
 [node name="CardPad" type="MarginContainer" parent="Root/MainVBox/ColumnsRow/Column3/CardPanel"]
 layout_mode = 2
@@ -151,6 +207,7 @@ layout_mode = 2
 [node name="CardPanel" type="PanelContainer" parent="Root/MainVBox/ColumnsRow/Column4"]
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
 [node name="CardPad" type="MarginContainer" parent="Root/MainVBox/ColumnsRow/Column4/CardPanel"]
 layout_mode = 2
@@ -189,6 +246,7 @@ layout_mode = 2
 [node name="CardPanel" type="PanelContainer" parent="Root/MainVBox/ColumnsRow/Column5"]
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
 [node name="CardPad" type="MarginContainer" parent="Root/MainVBox/ColumnsRow/Column5/CardPanel"]
 layout_mode = 2
@@ -223,6 +281,8 @@ theme_override_constants/separation = 0
 
 [node name="BackButton" type="Button" parent="Root/MainVBox/BottomRow"]
 layout_mode = 2
+custom_minimum_size = Vector2(140, 46)
+theme_override_font_sizes/font_size = 18
 text = "Back"
 
 [node name="ButtonSpacer" type="Control" parent="Root/MainVBox/BottomRow"]
@@ -231,6 +291,8 @@ size_flags_horizontal = 3
 
 [node name="StartBattleButton" type="Button" parent="Root/MainVBox/BottomRow"]
 layout_mode = 2
+custom_minimum_size = Vector2(180, 46)
+theme_override_font_sizes/font_size = 18
 text = "Start"
 
 [connection signal="pressed" from="Root/MainVBox/BottomRow/BackButton" to="." method="_on_back_pressed"]

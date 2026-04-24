@@ -2,6 +2,51 @@
 
 [ext_resource type="Script" uid="uid://drjq1ahpbkoc8" path="res://scripts/PlayerAttackController.cs" id="1_player_attack"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_frame"]
+bg_color = Color(0.101961, 0.113725, 0.145098, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.698039, 0.564706, 0.345098, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.4)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_attack"]
+bg_color = Color(0.172549, 0.188235, 0.239216, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.619608, 0.505882, 0.333333, 0.8)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_attack_hover"]
+bg_color = Color(0.239216, 0.258824, 0.313726, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.768627, 0.631373, 0.423529, 0.9)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_endturn"]
+bg_color = Color(0.87451, 0.717647, 0.482353, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
 [node name="PlayerAttackUi" type="CanvasLayer" unique_id=697434787]
 layer = 20
 script = ExtResource("1_player_attack")
@@ -11,39 +56,67 @@ anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 12.0
-offset_top = -200.0
-offset_right = 420.0
+offset_top = -228.0
+offset_right = 442.0
 offset_bottom = -12.0
 theme_override_constants/margin_left = 0
 theme_override_constants/margin_top = 0
 theme_override_constants/margin_right = 0
 theme_override_constants/margin_bottom = 0
 
-[node name="VBox" type="VBoxContainer" parent="Root" unique_id=1936011848]
+[node name="Frame" type="PanelContainer" parent="Root"]
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 8
+theme_override_styles/panel = SubResource("StyleBoxFlat_frame")
 
-[node name="AttackRow" type="HBoxContainer" parent="Root/VBox" unique_id=1631922956]
+[node name="Pad" type="MarginContainer" parent="Root/Frame"]
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="VBox" type="VBoxContainer" parent="Root/Frame/Pad" unique_id=1936011848]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 8
+theme_override_constants/separation = 8
+
+[node name="AttackRow" type="HBoxContainer" parent="Root/Frame/Pad/VBox" unique_id=1631922956]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Attack0" type="Button" parent="Root/VBox/AttackRow" unique_id=1250186747]
+[node name="Attack0" type="Button" parent="Root/Frame/Pad/VBox/AttackRow" unique_id=1250186747]
 custom_minimum_size = Vector2(120, 56)
 layout_mode = 2
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_attack")
+theme_override_styles/hover = SubResource("StyleBoxFlat_attack_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_attack_hover")
 text = "Strike"
 
-[node name="Attack1" type="Button" parent="Root/VBox/AttackRow" unique_id=1462334575]
+[node name="Attack1" type="Button" parent="Root/Frame/Pad/VBox/AttackRow" unique_id=1462334575]
 custom_minimum_size = Vector2(120, 56)
 layout_mode = 2
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_attack")
+theme_override_styles/hover = SubResource("StyleBoxFlat_attack_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_attack_hover")
 text = "Line"
 
-[node name="Attack2" type="Button" parent="Root/VBox/AttackRow" unique_id=1705805064]
+[node name="Attack2" type="Button" parent="Root/Frame/Pad/VBox/AttackRow" unique_id=1705805064]
 custom_minimum_size = Vector2(120, 56)
 layout_mode = 2
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_attack")
+theme_override_styles/hover = SubResource("StyleBoxFlat_attack_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_attack_hover")
 text = "Blast"
 
-[node name="EndTurn" type="Button" parent="Root/VBox" unique_id=1584293358]
+[node name="EndTurn" type="Button" parent="Root/Frame/Pad/VBox" unique_id=1584293358]
 custom_minimum_size = Vector2(160, 40)
 layout_mode = 2
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.141176, 0.117647, 0.0862745, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_endturn")
 text = "End Turn"

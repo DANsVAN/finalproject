@@ -554,7 +554,9 @@ public void HighlightPath(List<int> path)
 				entity.Node2DEntity.Scale = uniformScale;
 		}
 
-		worldCamera?.SetWorldBounds(GetWorldBoundsRect());
+		Rect2 bounds = GetWorldBoundsRect();
+		worldCamera?.SetWorldBounds(bounds);
+		worldCamera?.SnapToWorldPosition(bounds.GetCenter());
 	}
 
 	public void makeMap()

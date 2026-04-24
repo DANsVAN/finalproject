@@ -1,12 +1,38 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://bif70mqm6phxt"]
 
-[ext_resource type="Script" path="res://scripts/TimelineOverlay.cs" id="1_timeline"]
+[ext_resource type="Script" uid="uid://c4wrbpfrerpqb" path="res://scripts/TimelineOverlay.cs" id="1_timeline"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_background"]
+bg_color = Color(0.101961, 0.113725, 0.145098, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.698039, 0.564706, 0.345098, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0, 0, 0.4)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_current"]
+bg_color = Color(0.94, 0.84, 0.62, 0.16)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.94, 0.84, 0.62, 0.85)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [node name="TimelineOverlay" type="CanvasLayer" unique_id=901247311]
-script = ExtResource("1_timeline")
 layer = 10
+script = ExtResource("1_timeline")
 
-[node name="Root" type="Control" parent="."]
+[node name="Root" type="Control" parent="." unique_id=297569878]
 layout_mode = 3
 anchors_preset = 1
 anchor_left = 1.0
@@ -15,8 +41,9 @@ offset_left = -248.0
 offset_top = 16.0
 offset_right = -16.0
 offset_bottom = 80.0
+grow_horizontal = 0
 
-[node name="Background" type="Panel" parent="Root"]
+[node name="Background" type="Panel" parent="Root" unique_id=1629205213]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -25,6 +52,9 @@ offset_left = -8.0
 offset_top = -8.0
 offset_right = 8.0
 offset_bottom = 8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_background")
 
 [node name="QueueRoot" type="Control" parent="Root" unique_id=1881203045]
 unique_name_in_owner = true
@@ -32,11 +62,15 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="CurrentHighlight" type="Panel" parent="Root/QueueRoot" unique_id=786112346]
 unique_name_in_owner = true
-position = Vector2(0, 0)
-size = Vector2(48, 48)
+layout_mode = 0
+offset_right = 49.0
+offset_bottom = 64.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_current")
 
 [node name="IconsRoot" type="Control" parent="Root/QueueRoot" unique_id=114993601]
 unique_name_in_owner = true
@@ -44,3 +78,5 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2

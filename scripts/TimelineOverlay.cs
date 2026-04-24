@@ -5,8 +5,8 @@ using System.Collections.Generic;
 public partial class TimelineOverlay : CanvasLayer
 {
 	[Export] public int SlotCount = 4;
-	[Export] public float SlotSpacing = 56.0f;
-	[Export] public float IconSize = 48.0f;
+	[Export] public float SlotSpacing = 58.0f;
+	[Export] public float IconSize = 50.0f;
 	[Export] public float SlideDuration = 0.2f;
 
 	private Control _queueRoot;
@@ -26,7 +26,6 @@ public partial class TimelineOverlay : CanvasLayer
 		_queueRoot = GetNode<Control>("%QueueRoot");
 		_iconsRoot = GetNode<Control>("%IconsRoot");
 		_currentHighlight = GetNode<Panel>("%CurrentHighlight");
-		_currentHighlight.Size = new Vector2(IconSize, IconSize);
 		_queueRoot.Position = _queueRoot.Position.Round();
 	}
 
@@ -52,7 +51,6 @@ public partial class TimelineOverlay : CanvasLayer
 
 		_currentHighlight.Visible = clippedQueue.Count > 0;
 		_currentHighlight.Position = GetSlotPosition(0);
-		_currentHighlight.Size = new Vector2(IconSize, IconSize);
 
 		// Avoid overlapping tweens causing jitter/ghosting.
 		_activeTween?.Kill();

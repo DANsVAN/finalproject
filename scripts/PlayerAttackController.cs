@@ -17,10 +17,10 @@ public partial class PlayerAttackController : CanvasLayer
 
 	public override void _Ready()
 	{
-		_attackButton0 = GetNode<Button>("Root/VBox/AttackRow/Attack0");
-		_attackButton1 = GetNode<Button>("Root/VBox/AttackRow/Attack1");
-		_attackButton2 = GetNode<Button>("Root/VBox/AttackRow/Attack2");
-		_endTurnButton = GetNode<Button>("Root/VBox/EndTurn");
+		_attackButton0 = ResolveButton("Attack0", "Root/VBox/AttackRow/Attack0", "Root/Frame/Pad/VBox/AttackRow/Attack0");
+		_attackButton1 = ResolveButton("Attack1", "Root/VBox/AttackRow/Attack1", "Root/Frame/Pad/VBox/AttackRow/Attack1");
+		_attackButton2 = ResolveButton("Attack2", "Root/VBox/AttackRow/Attack2", "Root/Frame/Pad/VBox/AttackRow/Attack2");
+		_endTurnButton = ResolveButton("EndTurn", "Root/VBox/EndTurn", "Root/Frame/Pad/VBox/EndTurn");
 
 		_attackButton0.Pressed += () => OnAttackPressed(0);
 		_attackButton1.Pressed += () => OnAttackPressed(1);
@@ -28,6 +28,21 @@ public partial class PlayerAttackController : CanvasLayer
 		_endTurnButton.Pressed += OnEndTurnPressed;
 
 		SetTurnActive(false);
+	}
+
+	private Button ResolveButton(string name, string primaryPath, string secondaryPath)
+	{
+		Button button = GetNodeOrNull<Button>(primaryPath)
+			?? GetNodeOrNull<Button>(secondaryPath);
+		if (button != null)
+			return button;
+
+		Node fallback = FindChild(name, recursive: true, owned: false);
+		if (fallback is Button fallbackButton)
+			return fallbackButton;
+
+		GD.PushError($"PlayerAttackController: Could not find required button '{name}'.");
+		return new Button();
 	}
 
 	public void SetTurnActive(bool active)

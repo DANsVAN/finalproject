@@ -2,43 +2,163 @@
 
 [ext_resource type="Script" uid="uid://br2gycrfgk7vx" path="res://scripts/MainMenu.cs" id="1_l6cm7"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mainpanel"]
+bg_color = Color(0.105882, 0.117647, 0.152941, 0.956863)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.698039, 0.564706, 0.345098, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_primary"]
+bg_color = Color(0.87451, 0.717647, 0.482353, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_primary_hover"]
+bg_color = Color(0.92549, 0.784314, 0.552941, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_primary_pressed"]
+bg_color = Color(0.792157, 0.639216, 0.415686, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_secondary"]
+bg_color = Color(0.172549, 0.188235, 0.239216, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.619608, 0.505882, 0.333333, 0.8)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_secondary_hover"]
+bg_color = Color(0.239216, 0.258824, 0.313726, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.768627, 0.631373, 0.423529, 0.9)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
 [node name="MainMenu" type="CanvasLayer" unique_id=976128841]
 script = ExtResource("1_l6cm7")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1477238316]
+[node name="Background" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 0.0
+offset_bottom = 0.0
+color = Color(0.0588235, 0.0705882, 0.0980392, 1)
+
+[node name="BackdropTint" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 0.0
+offset_bottom = 0.0
+color = Color(0.14902, 0.109804, 0.0666667, 0.313726)
+
+[node name="CenterPanel" type="PanelContainer" parent="."]
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -20.0
-offset_right = 20.0
-offset_bottom = 20.0
+offset_left = -280.0
+offset_top = -230.0
+offset_right = 280.0
+offset_bottom = 230.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_mainpanel")
 
-[node name="Label" type="Label" parent="VBoxContainer" unique_id=752157592]
-layout_mode = 2
-text = "Game Name"
+[node name="PanelMargin" type="MarginContainer" parent="CenterPanel"]
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 24
 
-[node name="PlayBTN" type="Button" parent="VBoxContainer" unique_id=92352898]
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterPanel/PanelMargin" unique_id=1477238316]
 layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="CenterPanel/PanelMargin/VBoxContainer" unique_id=752157592]
+layout_mode = 2
+theme_override_font_sizes/font_size = 42
+text = "Warband Chronicle"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="CenterPanel/PanelMargin/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+modulate = Color(0.909804, 0.862745, 0.780392, 0.85)
+text = "Forge your squad and survive the rising tides of war"
+horizontal_alignment = 1
+
+[node name="Divider" type="HSeparator" parent="CenterPanel/PanelMargin/VBoxContainer"]
+layout_mode = 2
+
+[node name="PlayBTN" type="Button" parent="CenterPanel/PanelMargin/VBoxContainer" unique_id=92352898]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 54)
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.141176, 0.117647, 0.0862745, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_primary")
+theme_override_styles/hover = SubResource("StyleBoxFlat_primary_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_primary_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_primary_pressed")
 text = "Play Game"
 
-[node name="SettingsBTN" type="Button" parent="VBoxContainer" unique_id=1632715845]
+[node name="HowToPlayBTN" type="Button" parent="CenterPanel/PanelMargin/VBoxContainer"]
 layout_mode = 2
-text = "Settings"
-
-[node name="HowToPlayBTN" type="Button" parent="VBoxContainer"]
-layout_mode = 2
+custom_minimum_size = Vector2(0, 48)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_secondary")
+theme_override_styles/hover = SubResource("StyleBoxFlat_secondary_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_secondary_hover")
 text = "How To Play"
 
-[node name="ExitBTN" type="Button" parent="VBoxContainer" unique_id=1618374400]
+[node name="SettingsBTN" type="Button" parent="CenterPanel/PanelMargin/VBoxContainer" unique_id=1632715845]
 layout_mode = 2
+custom_minimum_size = Vector2(0, 48)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_secondary")
+theme_override_styles/hover = SubResource("StyleBoxFlat_secondary_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_secondary_hover")
+text = "Settings"
+
+[node name="ExitBTN" type="Button" parent="CenterPanel/PanelMargin/VBoxContainer" unique_id=1618374400]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 48)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_secondary")
+theme_override_styles/hover = SubResource("StyleBoxFlat_secondary_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_secondary_hover")
 text = "Exit"
 
-[connection signal="pressed" from="VBoxContainer/PlayBTN" to="." method="_on_play_btn_pressed"]
-[connection signal="pressed" from="VBoxContainer/SettingsBTN" to="." method="_on_settings_btn_pressed"]
-[connection signal="pressed" from="VBoxContainer/HowToPlayBTN" to="." method="_on_how_to_play_btn_pressed"]
-[connection signal="pressed" from="VBoxContainer/ExitBTN" to="." method="_on_exit_btn_pressed"]
+[connection signal="pressed" from="CenterPanel/PanelMargin/VBoxContainer/PlayBTN" to="." method="_on_play_btn_pressed"]
+[connection signal="pressed" from="CenterPanel/PanelMargin/VBoxContainer/HowToPlayBTN" to="." method="_on_how_to_play_btn_pressed"]
+[connection signal="pressed" from="CenterPanel/PanelMargin/VBoxContainer/SettingsBTN" to="." method="_on_settings_btn_pressed"]
+[connection signal="pressed" from="CenterPanel/PanelMargin/VBoxContainer/ExitBTN" to="." method="_on_exit_btn_pressed"]
