@@ -30,10 +30,15 @@ text = "Play Game"
 layout_mode = 2
 text = "Settings"
 
+[node name="HowToPlayBTN" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "How To Play"
+
 [node name="ExitBTN" type="Button" parent="VBoxContainer" unique_id=1618374400]
 layout_mode = 2
 text = "Exit"
 
 [connection signal="pressed" from="VBoxContainer/PlayBTN" to="." method="_on_play_btn_pressed"]
 [connection signal="pressed" from="VBoxContainer/SettingsBTN" to="." method="_on_settings_btn_pressed"]
+[connection signal="pressed" from="VBoxContainer/HowToPlayBTN" to="." method="_on_how_to_play_btn_pressed"]
 [connection signal="pressed" from="VBoxContainer/ExitBTN" to="." method="_on_exit_btn_pressed"]

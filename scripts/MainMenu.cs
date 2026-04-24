@@ -25,6 +25,13 @@ public partial class MainMenu : CanvasLayer
 		gameManger.ChangeChildScene(secneFilePath);
 	}
 
+	public void _on_how_to_play_btn_pressed()
+	{
+		secneFilePath = "res://scenes/how_to_play.tscn";
+		this.FollowViewportEnabled = true;
+		gameManger.ChangeChildScene(secneFilePath);
+	}
+
 		public void _on_exit_btn_pressed()
 	{
 		gameManger.EndGame();

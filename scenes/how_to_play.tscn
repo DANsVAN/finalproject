@@ -1,0 +1,58 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/HowToPlay.cs" id="1_howto_script"]
+
+[node name="HowToPlay" type="CanvasLayer"]
+script = ExtResource("1_howto_script")
+
+[node name="Root" type="MarginContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = -24.0
+
+[node name="VBox" type="VBoxContainer" parent="Root"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 0.0
+offset_bottom = 0.0
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Root/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "How To Play"
+horizontal_alignment = 1
+
+[node name="InstructionsPanel" type="PanelContainer" parent="Root/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="InstructionsMargin" type="MarginContainer" parent="Root/VBox/InstructionsPanel"]
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="InstructionsScroll" type="ScrollContainer" parent="Root/VBox/InstructionsPanel/InstructionsMargin"]
+custom_minimum_size = Vector2(0, 300)
+size_flags_vertical = 3
+
+[node name="InstructionsText" type="RichTextLabel" parent="Root/VBox/InstructionsPanel/InstructionsMargin/InstructionsScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+fit_content = true
+scroll_active = false
+bbcode_enabled = false
+text = "Objective\nDefeat all enemies each round. If all player units are defeated, the run ends.\n\nTurn Flow\n1) On your turn, green-highlighted tiles show where you can move.\n2) Left click a reachable tile to move.\n3) Choose an attack (Strike, Line, or Blast) and left click a valid target area.\n4) Press End Turn when finished.\n\nControls\n- Left Click: Select tiles and attack targets.\n- Middle Mouse Drag: Pan camera.\n- WASD / Arrow Keys: Pan camera.\n- Mouse Wheel or +/-: Zoom camera.\n\nAttack Notes\n- Strike: Single target, short range.\n- Line: Straight-line attack at longer range.\n- Blast: Area attack around the selected target tile.\n\nProgression\nClearing a round carries surviving squad members into the next round."
+
+[node name="BackBTN" type="Button" parent="Root/VBox"]
+layout_mode = 2
+text = "Back to Main Menu"
+
+[connection signal="pressed" from="Root/VBox/BackBTN" to="." method="_on_back_btn_pressed"]
